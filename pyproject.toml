@@ -12,7 +12,11 @@ authors = [
 ]
 readme = "README.md"
 license = {text = "CC BY-NC"}
-dependencies = []
+dependencies = [
+    "httpx>=0.28.0,<1",
+    "eth-hash>=0.7.0,<1",
+    "coincurve>=21.0.0,<22",
+]
 
 [tool.pdm.dev-dependencies]
 lint = [
@@ -183,7 +187,10 @@ root_package = "zex.sdk"
 name = "Root Layers"
 type = "layers"
 containers = ["zex.sdk"]
-layers = []
+layers = [
+    "clients",
+    "order",
+]
 exhaustive = true
 
 [tool.mypy]
