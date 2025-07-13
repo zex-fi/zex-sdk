@@ -48,16 +48,26 @@ class AsyncClient:
             assert self._nonce is not None, "For typing."
 
         payload = []
-        sent_orders: list[Order] = []
         for order in orders:
             signed_order = self._create_signed_order(order)
-            sent_orders.append(order)
             self._nonce += 1
             payload.append(signed_order.decode("latin-1"))
 
         if not payload:
             return
 
+        async with httpx.AsyncClient() as client:
+            await client.post(
+                f"{self._api_endpoint}/v1/order",
+                json=payload,
+            )
+
+    async def cancel_batch_orders(self, signed_orders: Iterable[bytes]) -> None:
+        payload = []
+        for signed_order in signed_orders:
+            payload.append(self._create_sigend_cancel_order(signed_order))
+        if not payload:
+            return
         async with httpx.AsyncClient() as client:
             await client.post(
                 f"{self._api_endpoint}/v1/order",
@@ -100,6 +110,32 @@ class AsyncClient:
             f"public: {self._public_key.hex()}\n"
         )
         message = "\x19Ethereum Signed Message:\n" + str(len(message)) + message
+
+        signature = self._private_key.sign_recoverable(
+            keccak(message.encode("ascii")), hasher=None
+        )
+        signature = signature[:64]  # Compact format
+
+        transaction_data += signature
+        return transaction_data
+
+    def _create_sigend_cancel_order(self, signed_order: bytes) -> bytes:
+        transaction_data = (
+            pack(">B", self._version)
+            + pack(">B", self._cancel_command)
+            + signed_order[1:-97]
+            + self._public_key
+        )
+
+        message = (
+            f"v: {transaction_data[0]}\n"
+            "name: cancel\n"
+            f"slice: {signed_order[1:-97].hex()}\n"
+            f"public: {signed_order[-97:-64].hex()}\n"
+        )
+        message = "".join(
+            ("\x19Ethereum Signed Message:\n", str(len(message)), message)
+        )
 
         signature = self._private_key.sign_recoverable(
             keccak(message.encode("ascii")), hasher=None
