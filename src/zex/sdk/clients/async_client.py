@@ -31,7 +31,7 @@ class AsyncClient:
         self._sell_command = ord("s")
         self._cancel_command = ord("c")
 
-    async def place_batch_orders(self, orders: Iterable[Order]) -> None:
+    async def place_batch_order(self, orders: Iterable[Order]) -> None:
         if self.user_id is None:
             raise RuntimeError("The Zex client is not registered.")
 
@@ -62,7 +62,7 @@ class AsyncClient:
                 json=payload,
             )
 
-    async def cancel_batch_orders(self, signed_orders: Iterable[bytes]) -> None:
+    async def cancel_batch_order(self, signed_orders: Iterable[bytes]) -> None:
         payload = []
         for signed_order in signed_orders:
             payload.append(self._create_sigend_cancel_order(signed_order))
