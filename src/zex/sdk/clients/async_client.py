@@ -6,7 +6,7 @@ import httpx
 from coincurve import PrivateKey
 from eth_hash.auto import keccak
 
-from zex.sdk.order import Order, OrderSide
+from zex.sdk.clients.order import Order, OrderSide
 
 
 class AsyncClient:
