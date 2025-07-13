@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import asyncio
 import time
 from collections.abc import Iterable
 from struct import pack
@@ -30,6 +33,17 @@ class AsyncClient:
         self._buy_command = ord("b")
         self._sell_command = ord("s")
         self._cancel_command = ord("c")
+
+    @classmethod
+    async def create(
+        cls, api_key: str | None = None, testnet: bool = True
+    ) -> AsyncClient:
+        client = cls(api_key, testnet)
+        await client.register()
+        return client
+
+    async def register(self) -> None:
+        await self._register_user_id()
 
     async def place_batch_order(self, orders: Iterable[Order]) -> None:
         if self.user_id is None:
@@ -73,6 +87,55 @@ class AsyncClient:
                 f"{self._api_endpoint}/v1/order",
                 json=payload,
             )
+
+    async def _register_user_id(self) -> None:
+        if self.user_id is not None:
+            return
+
+        transaction_data = (
+            pack(">B", self._version)
+            + pack(">B", self._register_command)
+            + self._public_key
+        )
+        signature = self._private_key.sign_recoverable(
+            keccak(self._create_register_message()), hasher=None
+        )
+        signature = signature[:64]  # Compact format.
+        transaction_data += signature
+
+        user_id = None
+        async with httpx.AsyncClient() as client:
+            await client.post(
+                f"{self._api_endpoint}/v1/register",
+                json=[transaction_data.decode("latin-1")],
+                timeout=self._register_timeout,
+            )
+            try:
+                user_id = await asyncio.wait_for(
+                    self._fetch_user_id_from_zex(client), timeout=self._register_timeout
+                )
+            except asyncio.TimeoutError as exc:
+                raise RuntimeError("Registering user ID timed out.") from exc
+        self.user_id = user_id
+
+    def _create_register_message(self) -> bytes:
+        message = "Welcome to ZEX."
+        message = "".join(
+            ("\x19Ethereum Signed Message:\n", str(len(message)), message)
+        )
+        return message.encode("ascii")
+
+    async def _fetch_user_id_from_zex(self, client: httpx.AsyncClient) -> int:
+        while True:
+            response = await client.get(
+                f"{self._api_endpoint}/v1/user/id?public={self._public_key.hex()}",  # noqa: E501
+                timeout=self._register_timeout,
+            )
+            if response.status_code == 200:
+                response_data = response.json()
+                if "id" in response_data:
+                    return int(response_data["id"])
+            await asyncio.sleep(0.1)
 
     def _create_signed_order(self, order: Order) -> bytes:
         assert self._nonce is not None
