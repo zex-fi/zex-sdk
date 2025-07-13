@@ -39,11 +39,8 @@ class AsyncClient:
         cls, api_key: str | None = None, testnet: bool = True
     ) -> AsyncClient:
         client = cls(api_key, testnet)
-        await client.register()
+        await client._register_user_id()
         return client
-
-    async def register(self) -> None:
-        await self._register_user_id()
 
     async def place_batch_order(self, orders: Iterable[Order]) -> None:
         if self.user_id is None:
