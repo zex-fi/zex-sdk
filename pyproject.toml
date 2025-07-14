@@ -191,7 +191,6 @@ type = "layers"
 containers = ["zex.sdk"]
 layers = [
     "clients",
-    "order",
 ]
 exhaustive = true
 
