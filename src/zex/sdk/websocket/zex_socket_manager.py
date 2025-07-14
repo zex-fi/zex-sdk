@@ -1,0 +1,2 @@
+class ZexSocketManager:
+    pass
