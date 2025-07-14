@@ -190,6 +190,7 @@ name = "Root Layers"
 type = "layers"
 containers = ["zex.sdk"]
 layers = [
+    "websocket",
     "clients",
 ]
 exhaustive = true
