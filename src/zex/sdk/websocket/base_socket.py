@@ -71,8 +71,10 @@ class BaseSocket:
 
     async def _on_message(self, message: str) -> None:
         parsed_message = self._parse_message(message)
+        if parsed_message is None:
+            return  # TODO: We may raise the appropriate exception here.
         await self._callback(parsed_message)
 
     @abstractmethod
-    def _parse_message(self, message: str) -> SocketMessage:
+    def _parse_message(self, message: str) -> SocketMessage | None:
         pass
