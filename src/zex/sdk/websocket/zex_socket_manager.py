@@ -8,16 +8,16 @@ from websockets import ClientConnection
 from zex.sdk.clients import AsyncClient
 
 
-class ZexSocketManager(AsyncClient):
-    def __init__(self, api_key: str | None = None, testnet: bool = True) -> None:
-        AsyncClient.__init__(self, api_key, testnet)
+class ZexSocketManager:
+    def __init__(self, client: AsyncClient) -> None:
+        self._client = client
         self._websocket_endpoint = "ws://api.zex.finance"
 
         self._websocket_task: asyncio.Task[None] | None = None
         self._websocket_error_message: str | None = None
 
     async def __enter__(self) -> None:
-        await self._register_user_id()
+        await self._client.register_user_id()
         startup_event = asyncio.Event()
         self._websocket_task = asyncio.create_task(
             self._register_and_run_websocket(startup_event)
@@ -32,7 +32,6 @@ class ZexSocketManager(AsyncClient):
         self._websocket_task.cancel()
         with suppress(asyncio.CancelledError):
             await asyncio.gather(self._websocket_task)
-        self.user_id = None
         self._websocket_task = None
         self._websocket_error_message = None
 
@@ -53,7 +52,7 @@ class ZexSocketManager(AsyncClient):
     async def _on_open(self, websocket: ClientConnection) -> None:
         subscribe_message = json.dumps({
             "method": "SUBSCRIBE",
-            "params": [f"{self._public_key.hex()}@executionReport"],
+            "params": [f"{self._client.public_key.hex()}@executionReport"],
             "id": 1,
         })
         await websocket.send(subscribe_message)
