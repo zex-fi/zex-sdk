@@ -24,7 +24,7 @@ class AsyncClient:
 
         private_key_bytes = bytes.fromhex(api_key) if api_key is not None else None
         self._private_key = PrivateKey(secret=private_key_bytes)
-        self._public_key = self._private_key.public_key.format(compressed=True)
+        self.public_key = self._private_key.public_key.format(compressed=True)
         self._register_timeout = 20.0
         self._nonce: int | None = None
         self.user_id: int | None = None
@@ -39,7 +39,7 @@ class AsyncClient:
         cls, api_key: str | None = None, testnet: bool = True
     ) -> AsyncClient:
         client = cls(api_key, testnet)
-        await client._register_user_id()
+        await client.register_user_id()
         return client
 
     async def place_batch_order(self, orders: Iterable[Order]) -> None:
@@ -85,14 +85,14 @@ class AsyncClient:
                 json=payload,
             )
 
-    async def _register_user_id(self) -> None:
+    async def register_user_id(self) -> None:
         if self.user_id is not None:
             return
 
         transaction_data = (
             pack(">B", self._version)
             + pack(">B", self._register_command)
-            + self._public_key
+            + self.public_key
         )
         signature = self._private_key.sign_recoverable(
             keccak(self._create_register_message()), hasher=None
@@ -125,7 +125,7 @@ class AsyncClient:
     async def _fetch_user_id_from_zex(self, client: httpx.AsyncClient) -> int:
         while True:
             response = await client.get(
-                f"{self._api_endpoint}/v1/user/id?public={self._public_key.hex()}",  # noqa: E501
+                f"{self._api_endpoint}/v1/user/id?public={self.public_key.hex()}",  # noqa: E501
                 timeout=self._register_timeout,
             )
             if response.status_code == 200:
@@ -156,7 +156,7 @@ class AsyncClient:
         )
         epoch = int(time.time())
 
-        transaction_data += pack(">II", epoch, self._nonce) + self._public_key
+        transaction_data += pack(">II", epoch, self._nonce) + self.public_key
 
         message = (
             "v: 1\n"
@@ -167,7 +167,7 @@ class AsyncClient:
             f"price: {order.price}\n"
             f"t: {epoch}\n"
             f"nonce: {self._nonce}\n"
-            f"public: {self._public_key.hex()}\n"
+            f"public: {self.public_key.hex()}\n"
         )
         message = "\x19Ethereum Signed Message:\n" + str(len(message)) + message
 
@@ -184,7 +184,7 @@ class AsyncClient:
             pack(">B", self._version)
             + pack(">B", self._cancel_command)
             + signed_order[1:-97]
-            + self._public_key
+            + self.public_key
         )
 
         message = (
