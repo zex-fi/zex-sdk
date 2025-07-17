@@ -2,7 +2,7 @@ import json
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-from zex.sdk.clients import AsyncClient
+from zex.sdk.client import AsyncClient
 from zex.sdk.websocket.base_socket import BaseSocket
 from zex.sdk.websocket.socket_message import SocketMessage
 
@@ -20,9 +20,12 @@ class ParsedWebSocketOrderMessage(SocketMessage):
 
 class ExecutionReportSocket(BaseSocket):
     def __init__(
-        self, client: AsyncClient, callback: Callable[[SocketMessage], Awaitable[Any]]
+        self,
+        client: AsyncClient,
+        callback: Callable[[SocketMessage], Awaitable[Any]],
+        retry_timeout: float = 10,
     ) -> None:
-        BaseSocket.__init__(self, client, callback)
+        BaseSocket.__init__(self, client, callback, retry_timeout)
 
     @property
     def stream_name(self) -> str:

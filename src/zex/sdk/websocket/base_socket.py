@@ -3,32 +3,37 @@ import json
 from abc import abstractmethod
 from collections.abc import Awaitable, Callable
 from contextlib import suppress
+from types import TracebackType
 from typing import Any
 
 import websockets
 from websockets import ClientConnection
 
-from zex.sdk.clients import AsyncClient
+from zex.sdk.client import AsyncClient
 from zex.sdk.websocket.socket_message import SocketMessage
 
 
 class BaseSocket:
     def __init__(
-        self, client: AsyncClient, callback: Callable[[SocketMessage], Awaitable[Any]]
+        self,
+        client: AsyncClient,
+        callback: Callable[[SocketMessage], Awaitable[Any]],
+        retry_timeout: float = 10,
     ) -> None:
         self._client = client
         self._callback = callback
         self._websocket_endpoint = "ws://api.zex.finance"
+        self._retry_timeout = retry_timeout
 
         self._websocket_task: asyncio.Task[None] | None = None
         self._websocket_error_message: str | None = None
 
-    @abstractmethod
     @property
+    @abstractmethod
     def stream_name(self) -> str:
         pass
 
-    async def __enter__(self) -> None:
+    async def __aenter__(self) -> None:
         await self._client.register_user_id()
         startup_event = asyncio.Event()
         self._websocket_task = asyncio.create_task(
@@ -39,13 +44,21 @@ class BaseSocket:
         except asyncio.TimeoutError:
             return
 
-    async def __exit__(self) -> None:
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException],  # noqa: F841
+        exc_value: BaseException,  # noqa: F841
+        exc_tb: TracebackType,  # noqa: F841
+    ) -> None:
         assert self._websocket_task is not None
         self._websocket_task.cancel()
         with suppress(asyncio.CancelledError):
             await asyncio.gather(self._websocket_task)
         self._websocket_task = None
         self._websocket_error_message = None
+
+    def running(self) -> bool:
+        return self._websocket_task is not None and not self._websocket_task.done()
 
     async def _register_and_run_websocket(self, startup_event: asyncio.Event) -> None:
         uri = f"{self._websocket_endpoint}/ws"
@@ -59,7 +72,7 @@ class BaseSocket:
                         await self._on_message(str(message))
             except Exception as e:
                 self._websocket_error_message = str(e)
-                await asyncio.sleep(10)
+                await asyncio.sleep(self._retry_timeout)
 
     async def _on_open(self, websocket: ClientConnection) -> None:
         subscribe_message = json.dumps({
