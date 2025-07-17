@@ -23,8 +23,8 @@ class BaseSocket:
         self._websocket_task: asyncio.Task[None] | None = None
         self._websocket_error_message: str | None = None
 
-    @abstractmethod
     @property
+    @abstractmethod
     def stream_name(self) -> str:
         pass
 

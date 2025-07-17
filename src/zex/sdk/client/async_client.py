@@ -26,7 +26,7 @@ class AsyncClient:
         self._private_key = PrivateKey(secret=private_key_bytes)
         self.public_key = self._private_key.public_key.format(compressed=True)
         self._register_timeout = 20.0
-        self._nonce: int | None = None
+        self.nonce: int | None = None
         self.user_id: int | None = None
 
         self._register_command = ord("r")
@@ -55,13 +55,13 @@ class AsyncClient:
             nonce_response = await client.get(
                 f"{self._api_endpoint}/v1/user/nonce?id={self.user_id}"
             )
-            self._nonce = nonce_response.json()["nonce"]
-            assert self._nonce is not None, "For typing."
+            self.nonce = nonce_response.json()["nonce"]
+            assert self.nonce is not None, "For typing."
 
         payload = []
         for order in orders:
             signed_order = self._create_signed_order(order)
-            self._nonce += 1
+            self.nonce += 1
             payload.append(signed_order.decode("latin-1"))
 
         if not payload:
@@ -135,7 +135,7 @@ class AsyncClient:
             await asyncio.sleep(0.1)
 
     def _create_signed_order(self, order: Order) -> bytes:
-        assert self._nonce is not None
+        assert self.nonce is not None
 
         pair = order.base_token + order.quote_token
         transaction_data = (
@@ -156,7 +156,7 @@ class AsyncClient:
         )
         epoch = int(time.time())
 
-        transaction_data += pack(">II", epoch, self._nonce) + self.public_key
+        transaction_data += pack(">II", epoch, self.nonce) + self.public_key
 
         message = (
             "v: 1\n"
@@ -166,7 +166,7 @@ class AsyncClient:
             f"amount: {order.volume:g}\n"
             f"price: {order.price}\n"
             f"t: {epoch}\n"
-            f"nonce: {self._nonce}\n"
+            f"nonce: {self.nonce}\n"
             f"public: {self.public_key.hex()}\n"
         )
         message = "\x19Ethereum Signed Message:\n" + str(len(message)) + message
