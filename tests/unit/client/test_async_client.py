@@ -1,7 +1,6 @@
 import pytest
 
-from zex.sdk.client.async_client import AsyncClient
-from zex.sdk.client.order import Order, OrderSide
+from zex.sdk.client import AsyncClient, Order, OrderSide
 
 
 @pytest.mark.usefixtures("mock_zex_server")
