@@ -8,7 +8,7 @@ from typing import Any
 import websockets
 from websockets import ClientConnection
 
-from zex.sdk.clients import AsyncClient
+from zex.sdk.client import AsyncClient
 from zex.sdk.websocket.socket_message import SocketMessage
 
 

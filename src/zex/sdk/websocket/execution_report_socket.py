@@ -2,7 +2,7 @@ import json
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-from zex.sdk.clients import AsyncClient
+from zex.sdk.client import AsyncClient
 from zex.sdk.websocket.base_socket import BaseSocket
 from zex.sdk.websocket.socket_message import SocketMessage
 
