@@ -14,11 +14,15 @@ from zex.sdk.websocket.socket_message import SocketMessage
 
 class BaseSocket:
     def __init__(
-        self, client: AsyncClient, callback: Callable[[SocketMessage], Awaitable[Any]]
+        self,
+        client: AsyncClient,
+        callback: Callable[[SocketMessage], Awaitable[Any]],
+        websocket_retry_timeout: float = 10,
     ) -> None:
         self._client = client
         self._callback = callback
         self._websocket_endpoint = "ws://api.zex.finance"
+        self._websocket_retry_timeout = websocket_retry_timeout
 
         self._websocket_task: asyncio.Task[None] | None = None
         self._websocket_error_message: str | None = None
@@ -27,6 +31,9 @@ class BaseSocket:
     @abstractmethod
     def stream_name(self) -> str:
         pass
+
+    def running(self) -> bool:
+        return self._websocket_task is not None and not self._websocket_task.done()
 
     async def __aenter__(self) -> None:
         await self._client.register_user_id()
@@ -39,7 +46,7 @@ class BaseSocket:
         except asyncio.TimeoutError:
             return
 
-    async def __aexit__(self, exc_type, exc_value, exc_tb)-> None:
+    async def __aexit__(self, exc_type, exc_value, exc_tb) -> None:
         assert self._websocket_task is not None
         self._websocket_task.cancel()
         with suppress(asyncio.CancelledError):
@@ -59,7 +66,7 @@ class BaseSocket:
                         await self._on_message(str(message))
             except Exception as e:
                 self._websocket_error_message = str(e)
-                await asyncio.sleep(10)
+                await asyncio.sleep(self._websocket_retry_timeout)
 
     async def _on_open(self, websocket: ClientConnection) -> None:
         subscribe_message = json.dumps({
