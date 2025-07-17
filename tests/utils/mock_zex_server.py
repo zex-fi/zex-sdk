@@ -296,7 +296,7 @@ class MockZexServer:
         return mock_response
 
     def _create_mock_websocket_connection_obj(
-        self, uri: str, **kwargs: Any  #
+        self, uri: str, **kwargs: Any  # noqa: F841
     ) -> MockZexWebSocket:
         new_ws = MockZexWebSocket(self, on_open_callback=self._ws_on_open_callback)
         return new_ws
