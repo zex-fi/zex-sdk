@@ -23,9 +23,9 @@ class ExecutionReportSocket(BaseSocket):
         self,
         client: AsyncClient,
         callback: Callable[[SocketMessage], Awaitable[Any]],
-        websocket_retry_timeout: float = 10,
+        retry_timeout: float = 10,
     ) -> None:
-        BaseSocket.__init__(self, client, callback, websocket_retry_timeout)
+        BaseSocket.__init__(self, client, callback, retry_timeout)
 
     @property
     def stream_name(self) -> str:

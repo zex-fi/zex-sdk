@@ -17,12 +17,12 @@ class BaseSocket:
         self,
         client: AsyncClient,
         callback: Callable[[SocketMessage], Awaitable[Any]],
-        websocket_retry_timeout: float = 10,
+        retry_timeout: float = 10,
     ) -> None:
         self._client = client
         self._callback = callback
         self._websocket_endpoint = "ws://api.zex.finance"
-        self._websocket_retry_timeout = websocket_retry_timeout
+        self._retry_timeout = retry_timeout
 
         self._websocket_task: asyncio.Task[None] | None = None
         self._websocket_error_message: str | None = None
@@ -66,7 +66,7 @@ class BaseSocket:
                         await self._on_message(str(message))
             except Exception as e:
                 self._websocket_error_message = str(e)
-                await asyncio.sleep(self._websocket_retry_timeout)
+                await asyncio.sleep(self._retry_timeout)
 
     async def _on_open(self, websocket: ClientConnection) -> None:
         subscribe_message = json.dumps({
