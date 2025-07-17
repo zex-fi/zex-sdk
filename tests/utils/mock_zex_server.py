@@ -224,7 +224,10 @@ class MockZexServer:
         return full_path
 
     async def _handle_http_get(
-        self, url: str, params: dict[str, Any] | None = None, **kwargs: Any
+        self,
+        url: str,
+        params: dict[str, Any] | None = None,  # noqa: F841
+        **kwargs: Any,  # noqa: F841
     ) -> AsyncMock:
         parsed_url = httpx.URL(url)
         path = parsed_url.path
@@ -267,7 +270,7 @@ class MockZexServer:
         return mock_response
 
     async def _handle_http_post(
-        self, url: str, json: Any = None, **kwargs: Any
+        self, url: str, json: Any = None, **kwargs: Any  # noqa: F841
     ) -> AsyncMock:
         parsed_url = httpx.URL(url)
         path = parsed_url.path
@@ -293,7 +296,7 @@ class MockZexServer:
         return mock_response
 
     def _create_mock_websocket_connection_obj(
-        self, uri: str, **kwargs: Any
+        self, uri: str, **kwargs: Any  #
     ) -> MockZexWebSocket:
         new_ws = MockZexWebSocket(self, on_open_callback=self._ws_on_open_callback)
         return new_ws

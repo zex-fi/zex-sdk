@@ -3,6 +3,7 @@ import json
 from abc import abstractmethod
 from collections.abc import Awaitable, Callable
 from contextlib import suppress
+from types import TracebackType
 from typing import Any
 
 import websockets
@@ -32,9 +33,6 @@ class BaseSocket:
     def stream_name(self) -> str:
         pass
 
-    def running(self) -> bool:
-        return self._websocket_task is not None and not self._websocket_task.done()
-
     async def __aenter__(self) -> None:
         await self._client.register_user_id()
         startup_event = asyncio.Event()
@@ -46,13 +44,21 @@ class BaseSocket:
         except asyncio.TimeoutError:
             return
 
-    async def __aexit__(self, exc_type, exc_value, exc_tb) -> None:
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException],  # noqa: F841
+        exc_value: BaseException,  # noqa: F841
+        exc_tb: TracebackType,  # noqa: F841
+    ) -> None:
         assert self._websocket_task is not None
         self._websocket_task.cancel()
         with suppress(asyncio.CancelledError):
             await asyncio.gather(self._websocket_task)
         self._websocket_task = None
         self._websocket_error_message = None
+
+    def running(self) -> bool:
+        return self._websocket_task is not None and not self._websocket_task.done()
 
     async def _register_and_run_websocket(self, startup_event: asyncio.Event) -> None:
         uri = f"{self._websocket_endpoint}/ws"
