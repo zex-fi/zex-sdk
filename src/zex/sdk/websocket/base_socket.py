@@ -39,7 +39,7 @@ class BaseSocket:
         except asyncio.TimeoutError:
             return
 
-    async def __aexit__(self) -> None:
+    async def __aexit__(self, exc_type, exc_value, exc_tb)-> None:
         assert self._websocket_task is not None
         self._websocket_task.cancel()
         with suppress(asyncio.CancelledError):
