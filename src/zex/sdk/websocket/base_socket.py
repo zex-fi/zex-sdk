@@ -28,7 +28,7 @@ class BaseSocket:
     def stream_name(self) -> str:
         pass
 
-    async def __enter__(self) -> None:
+    async def __aenter__(self) -> None:
         await self._client.register_user_id()
         startup_event = asyncio.Event()
         self._websocket_task = asyncio.create_task(
@@ -39,7 +39,7 @@ class BaseSocket:
         except asyncio.TimeoutError:
             return
 
-    async def __exit__(self) -> None:
+    async def __aexit__(self) -> None:
         assert self._websocket_task is not None
         self._websocket_task.cancel()
         with suppress(asyncio.CancelledError):
