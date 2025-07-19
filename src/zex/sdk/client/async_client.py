@@ -60,7 +60,7 @@ class AsyncClient:
 
         payload = []
         for order in orders:
-            signed_order = self._create_signed_order(order)
+            signed_order = self._create_signed_order_transaction(order)
             self.nonce += 1
             payload.append(signed_order.decode("latin-1"))
 
@@ -76,7 +76,7 @@ class AsyncClient:
     async def cancel_batch_order(self, signed_orders: Iterable[bytes]) -> None:
         payload = []
         for signed_order in signed_orders:
-            payload.append(self._create_sigend_cancel_order(signed_order))
+            payload.append(self._create_sigend_cancel_order_transaction(signed_order))
         if not payload:
             return
         async with httpx.AsyncClient() as client:
@@ -134,7 +134,7 @@ class AsyncClient:
                     return int(response_data["id"])
             await asyncio.sleep(0.1)
 
-    def _create_signed_order(self, order: Order) -> bytes:
+    def _create_signed_order_transaction(self, order: Order) -> bytes:
         assert self.nonce is not None
 
         pair = order.base_token + order.quote_token
@@ -179,7 +179,7 @@ class AsyncClient:
         transaction_data += signature
         return transaction_data
 
-    def _create_sigend_cancel_order(self, signed_order: bytes) -> bytes:
+    def _create_sigend_cancel_order_transaction(self, signed_order: bytes) -> bytes:
         transaction_data = (
             pack(">B", self._version)
             + pack(">B", self._cancel_command)
@@ -204,3 +204,6 @@ class AsyncClient:
 
         transaction_data += signature
         return transaction_data
+
+    def _create_signed_withdraw_transaction(self) -> None:
+        pass
