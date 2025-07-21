@@ -147,6 +147,17 @@ class AsyncClient:
                 json=payload,
             )
 
+    async def get_server_time(self) -> int:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{self._api_endpoint}/v1/time",
+            )
+        response_data: dict[str, int] = response.json()
+        time = response_data.get("serverTime")
+        if time is None:
+            raise RuntimeError("The server did not return a proper response.")
+        return time
+
     def _create_register_message(self) -> bytes:
         message = "Welcome to ZEX."
         message = "".join(
