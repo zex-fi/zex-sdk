@@ -195,6 +195,7 @@ containers = ["zex.sdk"]
 layers = [
     "websocket",
     "client",
+    "data_types",
 ]
 exhaustive = true
 

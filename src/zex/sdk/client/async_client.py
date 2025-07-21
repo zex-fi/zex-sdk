@@ -10,6 +10,7 @@ from coincurve import PrivateKey
 from eth_hash.auto import keccak
 
 from zex.sdk.client.order import Order, OrderSide
+from zex.sdk.data_types import WithdrawRequest
 
 
 class AsyncClient:
@@ -33,6 +34,9 @@ class AsyncClient:
         self._buy_command = ord("b")
         self._sell_command = ord("s")
         self._cancel_command = ord("c")
+        self._withdraw_command = ord("w")
+        self._deposit_command = ord("d")
+        self._btc_deposit_command = ord("x")
 
     @classmethod
     async def create(
@@ -41,49 +45,6 @@ class AsyncClient:
         client = cls(api_key, testnet)
         await client.register_user_id()
         return client
-
-    async def place_batch_order(self, orders: Iterable[Order]) -> None:
-        if self.user_id is None:
-            raise RuntimeError("The Zex client is not registered.")
-
-        orders = list(orders)
-
-        if len(orders) == 0:
-            return
-
-        async with httpx.AsyncClient() as client:
-            nonce_response = await client.get(
-                f"{self._api_endpoint}/v1/user/nonce?id={self.user_id}"
-            )
-            self.nonce = nonce_response.json()["nonce"]
-            assert self.nonce is not None, "For typing."
-
-        payload = []
-        for order in orders:
-            signed_order = self._create_signed_order(order)
-            self.nonce += 1
-            payload.append(signed_order.decode("latin-1"))
-
-        if not payload:
-            return
-
-        async with httpx.AsyncClient() as client:
-            await client.post(
-                f"{self._api_endpoint}/v1/order",
-                json=payload,
-            )
-
-    async def cancel_batch_order(self, signed_orders: Iterable[bytes]) -> None:
-        payload = []
-        for signed_order in signed_orders:
-            payload.append(self._create_sigend_cancel_order(signed_order))
-        if not payload:
-            return
-        async with httpx.AsyncClient() as client:
-            await client.post(
-                f"{self._api_endpoint}/v1/order",
-                json=payload,
-            )
 
     async def register_user_id(self) -> None:
         if self.user_id is not None:
@@ -115,6 +76,70 @@ class AsyncClient:
                 raise RuntimeError("Registering user ID timed out.") from exc
         self.user_id = user_id
 
+    async def place_batch_order(self, orders: Iterable[Order]) -> None:
+        if self.user_id is None:
+            raise RuntimeError("The Zex client is not registered.")
+
+        orders = list(orders)
+
+        if len(orders) == 0:
+            return
+
+        async with httpx.AsyncClient() as client:
+            nonce_response = await client.get(
+                f"{self._api_endpoint}/v1/user/nonce?id={self.user_id}"
+            )
+            self.nonce = nonce_response.json()["nonce"]
+            assert self.nonce is not None, "For typing."
+
+        payload = []
+        for order in orders:
+            signed_order = self._create_signed_order_transaction(order)
+            self.nonce += 1
+            payload.append(signed_order.decode("latin-1"))
+
+        if not payload:
+            return
+
+        async with httpx.AsyncClient() as client:
+            await client.post(
+                f"{self._api_endpoint}/v1/order",
+                json=payload,
+            )
+
+    async def cancel_batch_order(self, signed_orders: Iterable[bytes]) -> None:
+        payload = []
+        for signed_order in signed_orders:
+            payload.append(self._create_sigend_cancel_order_transaction(signed_order))
+        if not payload:
+            return
+        async with httpx.AsyncClient() as client:
+            await client.post(
+                f"{self._api_endpoint}/v1/order",
+                json=payload,
+            )
+
+    async def withdraw(self, withdraw_request: WithdrawRequest) -> None:
+        if self.user_id is None:
+            raise RuntimeError("The Zex client is not registered.")
+
+        async with httpx.AsyncClient() as client:
+            nonce_response = await client.get(
+                f"{self._api_endpoint}/v1/user/nonce?id={self.user_id}"
+            )
+            self.nonce = nonce_response.json()["nonce"]
+            assert self.nonce is not None, "For typing."
+
+        signed_withdraw_transaction = self._create_signed_withdraw_transaction(
+            withdraw_request
+        )
+        payload = [signed_withdraw_transaction.decode("latin-1")]
+        async with httpx.AsyncClient() as client:
+            await client.post(
+                f"{self._api_endpoint}/v1/withdraw",
+                json=payload,
+            )
+
     def _create_register_message(self) -> bytes:
         message = "Welcome to ZEX."
         message = "".join(
@@ -134,7 +159,7 @@ class AsyncClient:
                     return int(response_data["id"])
             await asyncio.sleep(0.1)
 
-    def _create_signed_order(self, order: Order) -> bytes:
+    def _create_signed_order_transaction(self, order: Order) -> bytes:
         assert self.nonce is not None
 
         pair = order.base_token + order.quote_token
@@ -179,7 +204,7 @@ class AsyncClient:
         transaction_data += signature
         return transaction_data
 
-    def _create_sigend_cancel_order(self, signed_order: bytes) -> bytes:
+    def _create_sigend_cancel_order_transaction(self, signed_order: bytes) -> bytes:
         transaction_data = (
             pack(">B", self._version)
             + pack(">B", self._cancel_command)
@@ -196,6 +221,45 @@ class AsyncClient:
         message = "".join(
             ("\x19Ethereum Signed Message:\n", str(len(message)), message)
         )
+
+        signature = self._private_key.sign_recoverable(
+            keccak(message.encode("ascii")), hasher=None
+        )
+        signature = signature[:64]  # Compact format
+
+        transaction_data += signature
+        return transaction_data
+
+    def _create_signed_withdraw_transaction(
+        self, withdraw_request: WithdrawRequest
+    ) -> bytes:
+        transaction_data = (
+            pack(">B", self._version)
+            + pack(">B", self._withdraw_command)
+            + pack(">B", len(withdraw_request.token_name))
+            + withdraw_request.token_chain.encode()
+            + withdraw_request.token_name.encode()
+            + pack(">d", withdraw_request.amount)
+            + bytes.fromhex(withdraw_request.destination[2:])
+        )
+        epoch = int(time.time())
+        transaction_data += (
+            pack(">II", epoch, self.nonce) + pack(">Q", self.user_id) + self.public_key
+        )
+
+        message = (
+            "v: 1\n"
+            "name: withdraw\n"
+            f"token chain: {withdraw_request.token_chain}\n"
+            f"token name: {withdraw_request.token_name}\n"
+            f"amount: {withdraw_request.amount}\n"
+            f"to: {withdraw_request.destination}\n"
+            f"t: {epoch}\n"
+            f"nonce: {self.nonce}\n"
+            f"user_id: {self.user_id}\n"
+            f"public: {self.public_key.hex()}\n"
+        )
+        message = "\x19Ethereum Signed Message:\n" + str(len(message)) + message
 
         signature = self._private_key.sign_recoverable(
             keccak(message.encode("ascii")), hasher=None
