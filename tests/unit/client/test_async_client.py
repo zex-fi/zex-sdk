@@ -1,6 +1,7 @@
 import pytest
 
-from zex.sdk.client import AsyncClient, Order, OrderSide
+from zex.sdk.client import AsyncClient
+from zex.sdk.data_types import OrderSide, PlaceOrderRequest
 
 
 @pytest.mark.usefixtures("mock_zex_server")
@@ -43,7 +44,7 @@ async def test_place_batch_order_should_increment_nonce_by_the_number_or_orders(
     client = AsyncClient(
         api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
     )
-    order = Order(
+    order = PlaceOrderRequest(
         base_token="BTC",
         quote_token="USDT",
         volume=0.1,
@@ -69,7 +70,7 @@ async def test_place_batch_order_raises_if_not_registered() -> None:
     client = AsyncClient(
         api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
     )
-    order = Order(
+    order = PlaceOrderRequest(
         base_token="BTC",
         quote_token="USDT",
         volume=0.1,

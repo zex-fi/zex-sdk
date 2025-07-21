@@ -8,7 +8,7 @@ class OrderSide(str, Enum):
 
 
 @dataclass
-class Order:
+class PlaceOrderRequest:
     base_token: str
     quote_token: str
     side: OrderSide
