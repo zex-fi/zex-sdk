@@ -158,6 +158,15 @@ class AsyncClient:
             raise RuntimeError("The server did not return a proper response.")
         return time
 
+    async def ping(self) -> bool:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{self._api_endpoint}/v1/ping",
+            )
+        if response.status_code == 200:
+            return True
+        return False
+
     def _create_register_message(self) -> bytes:
         message = "Welcome to ZEX."
         message = "".join(
