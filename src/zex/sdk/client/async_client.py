@@ -9,8 +9,7 @@ import httpx
 from coincurve import PrivateKey
 from eth_hash.auto import keccak
 
-from zex.sdk.client.order import Order, OrderSide
-from zex.sdk.data_types import WithdrawRequest
+from zex.sdk.data_types import OrderSide, PlaceOrderRequest, WithdrawRequest
 
 
 class AsyncClient:
@@ -76,7 +75,7 @@ class AsyncClient:
                 raise RuntimeError("Registering user ID timed out.") from exc
         self.user_id = user_id
 
-    async def place_batch_order(self, orders: Iterable[Order]) -> None:
+    async def place_batch_order(self, orders: Iterable[PlaceOrderRequest]) -> None:
         if self.user_id is None:
             raise RuntimeError("The Zex client is not registered.")
 
@@ -140,6 +139,14 @@ class AsyncClient:
                 json=payload,
             )
 
+    async def deposit(self, transaction: bytes) -> None:
+        payload = [transaction.decode("latin-1")]
+        async with httpx.AsyncClient() as client:
+            await client.post(
+                f"{self._api_endpoint}/v1/deposit",
+                json=payload,
+            )
+
     def _create_register_message(self) -> bytes:
         message = "Welcome to ZEX."
         message = "".join(
@@ -159,7 +166,7 @@ class AsyncClient:
                     return int(response_data["id"])
             await asyncio.sleep(0.1)
 
-    def _create_signed_order_transaction(self, order: Order) -> bytes:
+    def _create_signed_order_transaction(self, order: PlaceOrderRequest) -> bytes:
         assert self.nonce is not None
 
         pair = order.base_token + order.quote_token
