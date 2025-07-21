@@ -10,6 +10,7 @@ from coincurve import PrivateKey
 from eth_hash.auto import keccak
 
 from zex.sdk.client.order import Order, OrderSide
+from zex.sdk.data_types import WithdrawRequest
 
 
 class AsyncClient:
@@ -33,6 +34,9 @@ class AsyncClient:
         self._buy_command = ord("b")
         self._sell_command = ord("s")
         self._cancel_command = ord("c")
+        self._withdraw_command = ord("w")
+        self._deposit_command = ord("d")
+        self._btc_deposit_command = ord("x")
 
     @classmethod
     async def create(
@@ -41,6 +45,36 @@ class AsyncClient:
         client = cls(api_key, testnet)
         await client.register_user_id()
         return client
+
+    async def register_user_id(self) -> None:
+        if self.user_id is not None:
+            return
+
+        transaction_data = (
+            pack(">B", self._version)
+            + pack(">B", self._register_command)
+            + self.public_key
+        )
+        signature = self._private_key.sign_recoverable(
+            keccak(self._create_register_message()), hasher=None
+        )
+        signature = signature[:64]  # Compact format.
+        transaction_data += signature
+
+        user_id = None
+        async with httpx.AsyncClient() as client:
+            await client.post(
+                f"{self._api_endpoint}/v1/register",
+                json=[transaction_data.decode("latin-1")],
+                timeout=self._register_timeout,
+            )
+            try:
+                user_id = await asyncio.wait_for(
+                    self._fetch_user_id_from_zex(client), timeout=self._register_timeout
+                )
+            except asyncio.TimeoutError as exc:
+                raise RuntimeError("Registering user ID timed out.") from exc
+        self.user_id = user_id
 
     async def place_batch_order(self, orders: Iterable[Order]) -> None:
         if self.user_id is None:
@@ -85,35 +119,26 @@ class AsyncClient:
                 json=payload,
             )
 
-    async def register_user_id(self) -> None:
-        if self.user_id is not None:
-            return
+    async def withdraw(self, withdraw_request: WithdrawRequest) -> None:
+        if self.user_id is None:
+            raise RuntimeError("The Zex client is not registered.")
 
-        transaction_data = (
-            pack(">B", self._version)
-            + pack(">B", self._register_command)
-            + self.public_key
-        )
-        signature = self._private_key.sign_recoverable(
-            keccak(self._create_register_message()), hasher=None
-        )
-        signature = signature[:64]  # Compact format.
-        transaction_data += signature
+        async with httpx.AsyncClient() as client:
+            nonce_response = await client.get(
+                f"{self._api_endpoint}/v1/user/nonce?id={self.user_id}"
+            )
+            self.nonce = nonce_response.json()["nonce"]
+            assert self.nonce is not None, "For typing."
 
-        user_id = None
+        signed_withdraw_transaction = self._create_signed_withdraw_transaction(
+            withdraw_request
+        )
+        payload = [signed_withdraw_transaction.decode("latin-1")]
         async with httpx.AsyncClient() as client:
             await client.post(
-                f"{self._api_endpoint}/v1/register",
-                json=[transaction_data.decode("latin-1")],
-                timeout=self._register_timeout,
+                f"{self._api_endpoint}/v1/withdraw",
+                json=payload,
             )
-            try:
-                user_id = await asyncio.wait_for(
-                    self._fetch_user_id_from_zex(client), timeout=self._register_timeout
-                )
-            except asyncio.TimeoutError as exc:
-                raise RuntimeError("Registering user ID timed out.") from exc
-        self.user_id = user_id
 
     def _create_register_message(self) -> bytes:
         message = "Welcome to ZEX."
@@ -205,5 +230,41 @@ class AsyncClient:
         transaction_data += signature
         return transaction_data
 
-    def _create_signed_withdraw_transaction(self) -> None:
-        pass
+    def _create_signed_withdraw_transaction(
+        self, withdraw_request: WithdrawRequest
+    ) -> bytes:
+        transaction_data = (
+            pack(">B", self._version)
+            + pack(">B", self._withdraw_command)
+            + pack(">B", len(withdraw_request.token_name))
+            + withdraw_request.token_chain.encode()
+            + withdraw_request.token_name.encode()
+            + pack(">d", withdraw_request.amount)
+            + bytes.fromhex(withdraw_request.destination[2:])
+        )
+        epoch = int(time.time())
+        transaction_data += (
+            pack(">II", epoch, self.nonce) + pack(">Q", self.user_id) + self.public_key
+        )
+
+        message = (
+            "v: 1\n"
+            "name: withdraw\n"
+            f"token chain: {withdraw_request.token_chain}\n"
+            f"token name: {withdraw_request.token_name}\n"
+            f"amount: {withdraw_request.amount}\n"
+            f"to: {withdraw_request.destination}\n"
+            f"t: {epoch}\n"
+            f"nonce: {self.nonce}\n"
+            f"user_id: {self.user_id}\n"
+            f"public: {self.public_key.hex()}\n"
+        )
+        message = "\x19Ethereum Signed Message:\n" + str(len(message)) + message
+
+        signature = self._private_key.sign_recoverable(
+            keccak(message.encode("ascii")), hasher=None
+        )
+        signature = signature[:64]  # Compact format
+
+        transaction_data += signature
+        return transaction_data
