@@ -5,7 +5,7 @@
 groups = ["default", "check", "lint", "test"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:7d1fdd33bd1e00fae8ed2fdcb60270bcb4ce881eccdfa7733d3f430ac58c4756"
+content_hash = "sha256:cac879565ad0d2fbd094e089a1dd546bf5fbc2020ae86be74078ae7f9adff390"
 
 [[metadata.targets]]
 requires_python = ">=3.11,<3.12"
@@ -267,6 +267,20 @@ groups = ["default"]
 files = [
     {file = "eth_hash-0.7.1-py3-none-any.whl", hash = "sha256:0fb1add2adf99ef28883fd6228eb447ef519ea72933535ad1a0b28c6f65f868a"},
     {file = "eth_hash-0.7.1.tar.gz", hash = "sha256:d2411a403a0b0a62e8247b4117932d900ffb4c8c64b15f92620547ca5ce46be5"},
+]
+
+[[package]]
+name = "eth-typing"
+version = "5.2.1"
+requires_python = "<4,>=3.8"
+summary = "eth-typing: Common type annotations for ethereum python packages"
+groups = ["default"]
+dependencies = [
+    "typing-extensions>=4.5.0",
+]
+files = [
+    {file = "eth_typing-5.2.1-py3-none-any.whl", hash = "sha256:b0c2812ff978267563b80e9d701f487dd926f1d376d674f3b535cfe28b665d3d"},
+    {file = "eth_typing-5.2.1.tar.gz", hash = "sha256:7557300dbf02a93c70fa44af352b5c4a58f94e997a0fd6797fb7d1c29d9538ee"},
 ]
 
 [[package]]
@@ -1039,15 +1053,6 @@ groups = ["lint"]
 files = [
     {file = "pygments-2.19.2-py3-none-any.whl", hash = "sha256:86540386c03d588bb81d44bc3928634ff26449851e99741617ecb9037ee5ec0b"},
     {file = "pygments-2.19.2.tar.gz", hash = "sha256:636cb2477cec7f8952536970bc533bc43743542f70392ae026374600add5b887"},
-]
-
-[[package]]
-name = "pysha3"
-version = "1.0.2"
-summary = "SHA-3 (Keccak) for Python 2.7 - 3.5"
-groups = ["default"]
-files = [
-    {file = "pysha3-1.0.2.tar.gz", hash = "sha256:fe988e73f2ce6d947220624f04d467faf05f1bbdbc64b0a201296bb3af92739e"},
 ]
 
 [[package]]

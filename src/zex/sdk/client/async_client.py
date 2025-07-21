@@ -140,6 +140,14 @@ class AsyncClient:
                 json=payload,
             )
 
+    async def deposit(self, transaction: bytes) -> None:
+        payload = [transaction.decode("latin-1")]
+        async with httpx.AsyncClient() as client:
+            await client.post(
+                f"{self._api_endpoint}/v1/deposit",
+                json=payload,
+            )
+
     def _create_register_message(self) -> bytes:
         message = "Welcome to ZEX."
         message = "".join(
