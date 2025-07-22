@@ -4,11 +4,12 @@ import asyncio
 import time
 from collections.abc import Iterable
 from struct import pack
-from typing import Any
+from typing import Any, TypeVar
 
 import httpx
 from coincurve import PrivateKey
 from eth_hash.auto import keccak
+from pydantic import TypeAdapter
 
 from zex.sdk.data_types import (
     Asset,
@@ -16,8 +17,11 @@ from zex.sdk.data_types import (
     OrderSide,
     PlaceOrderRequest,
     TradeInfo,
+    Transfer,
     WithdrawRequest,
 )
+
+ServerResponseType = TypeVar("ServerResponseType")
 
 
 class AsyncClient:
@@ -77,7 +81,8 @@ class AsyncClient:
             )
             try:
                 user_id = await asyncio.wait_for(
-                    self._fetch_user_id_from_zex(client), timeout=self._register_timeout
+                    self._fetch_user_id_from_server(client),
+                    timeout=self._register_timeout,
                 )
             except asyncio.TimeoutError as exc:
                 raise RuntimeError("Registering user ID timed out.") from exc
@@ -235,70 +240,38 @@ class AsyncClient:
     async def get_user_trades(self) -> list[TradeInfo]:
         if self.user_id is None:
             raise RuntimeError("The Zex client is not registered.")
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                f"{self._api_endpoint}/v1/user/trades",
-                params={"id": self.user_id},
-            )
-        response_data = response.json()
-        if response.status_code == 422:
-            detail = response_data.get("detail") or []
-            raise RuntimeError(
-                f"Fetching user trades from the server failed. Detail: {detail}"
-            )
-        if not isinstance(response_data, list):
-            raise RuntimeError("Received invalid response for trades.")
-        trades: list[TradeInfo] = []
-        try:
-            for trade_info in response_data:
-                trades.append(TradeInfo.model_validate(trade_info))
-        except Exception as e:
-            raise RuntimeError(f"Parsing trades response failed: {e}")
-        return trades
+        return await self._get_and_parse_response_from_server(
+            type_adapter=TypeAdapter(list[TradeInfo]),
+            api_path="/v1/user/trades",
+            params={"id": self.user_id},
+        )
 
     async def get_user_assets(self) -> list[Asset]:
         if self.user_id is None:
             raise RuntimeError("The Zex client is not registered.")
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                f"{self._api_endpoint}/v1/asset/getUserAsset",
-                params={"id": self.user_id},
-            )
-        response_data = response.json()
-        if response.status_code == 422:
-            detail = response_data.get("detail") or []
-            raise RuntimeError(f"Fetching user assets from the server failed: {detail}")
-        if not isinstance(response_data, list):
-            raise RuntimeError("Received invalid response for user assets.")
-        assets: list[Asset] = []
-        try:
-            for asset in response_data:
-                assets.append(Asset.model_validate(asset))
-        except Exception as e:
-            raise RuntimeError(f"Parsing assets response failed: {e}")
-        return assets
+        return await self._get_and_parse_response_from_server(
+            type_adapter=TypeAdapter(list[Asset]),
+            api_path="/v1/asset/getUserAsset",
+            params={"id": self.user_id},
+        )
 
     async def get_user_orders(self) -> list[Order]:
         if self.user_id is None:
             raise RuntimeError("The Zex client is not registered.")
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                f"{self._api_endpoint}/v1/user/orders",
-                params={"id": self.user_id},
-            )
-        response_data = response.json()
-        if response.status_code == 422:
-            detail = response_data.get("detail") or []
-            raise RuntimeError(f"Fetching user orders from the server failed: {detail}")
-        if not isinstance(response_data, list):
-            raise RuntimeError("Received invalid response for user orders.")
-        orders: list[Order] = []
-        try:
-            for order in response_data:
-                orders.append(Order.model_validate(order))
-        except Exception as e:
-            raise RuntimeError(f"Parsing orders response failed: {e}")
-        return orders
+        return await self._get_and_parse_response_from_server(
+            type_adapter=TypeAdapter(list[Order]),
+            api_path="/v1/user/orders",
+            params={"id": self.user_id},
+        )
+
+    async def get_user_transfers(self) -> list[Transfer]:
+        if self.user_id is None:
+            raise RuntimeError("The Zex client is not registered.")
+        return await self._get_and_parse_response_from_server(
+            type_adapter=TypeAdapter(list[Transfer]),
+            api_path="/v1/user/transfers",
+            params={"id": self.user_id},
+        )
 
     def _create_register_message(self) -> bytes:
         message = "Welcome to ZEX."
@@ -307,7 +280,7 @@ class AsyncClient:
         )
         return message.encode("ascii")
 
-    async def _fetch_user_id_from_zex(self, client: httpx.AsyncClient) -> int:
+    async def _fetch_user_id_from_server(self, client: httpx.AsyncClient) -> int:
         while True:
             response = await client.get(
                 f"{self._api_endpoint}/v1/user/id?public={self.public_key.hex()}",  # noqa: E501
@@ -428,3 +401,27 @@ class AsyncClient:
 
         transaction_data += signature
         return transaction_data
+
+    async def _get_and_parse_response_from_server(
+        self,
+        type_adapter: TypeAdapter[ServerResponseType],
+        api_path: str,
+        params: dict[str, Any] | None = None,
+    ) -> ServerResponseType:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{self._api_endpoint}{api_path}",
+                params=params,
+            )
+
+        response_data = response.json()
+        if response.status_code == 422:
+            detail = response_data.get("detail") or []
+            raise RuntimeError(
+                f"Fetching response from the server failed. Detail: {detail}"
+            )
+
+        try:
+            return type_adapter.validate_python(response_data)
+        except Exception as e:
+            raise RuntimeError(f"Parsing response failed with error: {e}")
