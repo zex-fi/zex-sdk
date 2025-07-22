@@ -167,6 +167,26 @@ class AsyncClient:
             return True
         return False
 
+    async def get_price(self, symbol: str) -> float:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{self._api_endpoint}/v1/ticker/price",
+                params={"symbol": symbol},
+            )
+        response_data = response.json()
+        if response.status_code == 400:
+            detail = response_data.get("detail") or {}
+            error_message = detail.get("error") or ""
+            raise RuntimeError(
+                f"Fetching price from the server failed: {error_message}"
+            )
+        price: float | None = response_data.get("price")
+        if price is None:
+            raise RuntimeError(
+                "Could not retrieve the price of symbol from the server."
+            )
+        return price
+
     def _create_register_message(self) -> bytes:
         message = "Welcome to ZEX."
         message = "".join(
