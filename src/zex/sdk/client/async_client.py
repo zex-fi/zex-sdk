@@ -4,6 +4,7 @@ import asyncio
 import time
 from collections.abc import Iterable
 from struct import pack
+from typing import Any
 
 import httpx
 from coincurve import PrivateKey
@@ -186,6 +187,21 @@ class AsyncClient:
                 "Could not retrieve the price of symbol from the server."
             )
         return price
+
+    async def get_ticker(self, symbol: str) -> dict[str, Any]:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{self._api_endpoint}/v1/ticker",
+                params={"symbol": symbol},
+            )
+        response_data: dict[str, Any] = response.json()
+        if response.status_code == 400:
+            detail = response_data.get("detail") or {}
+            error_message = detail.get("error") or ""
+            raise RuntimeError(
+                f"Fetching price from the server failed: {error_message}"
+            )
+        return response_data
 
     def _create_register_message(self) -> bytes:
         message = "Welcome to ZEX."
