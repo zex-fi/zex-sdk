@@ -18,6 +18,7 @@ from zex.sdk.data_types import (
     PlaceOrderRequest,
     TradeInfo,
     Transfer,
+    Withdraw,
     WithdrawRequest,
 )
 
@@ -271,6 +272,15 @@ class AsyncClient:
             type_adapter=TypeAdapter(list[Transfer]),
             api_path="/v1/user/transfers",
             params={"id": self.user_id},
+        )
+
+    async def get_user_withdraws(self, chain: str) -> list[Withdraw]:
+        if self.user_id is None:
+            raise RuntimeError("The Zex client is not registered.")
+        return await self._get_and_parse_response_from_server(
+            type_adapter=TypeAdapter(list[Withdraw]),
+            api_path="/v1/user/withdraws",
+            params={"id": self.user_id, "chain": chain},
         )
 
     def _create_register_message(self) -> bytes:
