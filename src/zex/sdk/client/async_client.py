@@ -10,7 +10,7 @@ import httpx
 from coincurve import PrivateKey
 from eth_hash.auto import keccak
 
-from zex.sdk.data_types import OrderSide, PlaceOrderRequest, WithdrawRequest
+from zex.sdk.data_types import OrderSide, PlaceOrderRequest, TradeInfo, WithdrawRequest
 
 
 class AsyncClient:
@@ -232,6 +232,31 @@ class AsyncClient:
                 f"Fetching exchange info from the server failed: {error_message}"
             )
         return response_data
+
+    async def get_trades(self) -> list[TradeInfo]:
+        if self.user_id is None:
+            raise RuntimeError("The Zex client is not registered.")
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{self._api_endpoint}/v1/user/trades",
+                params={"id": self.user_id},
+            )
+        response_data = response.json()
+        if response.status_code == 400:
+            detail = response_data.get("detail") or {}
+            error_message = detail.get("error") or ""
+            raise RuntimeError(
+                f"Fetching exchange info from the server failed: {error_message}"
+            )
+        if not isinstance(response_data, list):
+            raise RuntimeError("Received invalid response for trades.")
+        trades: list[TradeInfo] = []
+        try:
+            for trade_info in response_data:
+                trades.append(TradeInfo.model_validate(trade_info))
+        except Exception as e:
+            raise RuntimeError(f"Parsing trades response failed: {e}")
+        return trades
 
     def _create_register_message(self) -> bytes:
         message = "Welcome to ZEX."
