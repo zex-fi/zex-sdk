@@ -199,14 +199,14 @@ class AsyncClient:
             detail = response_data.get("detail") or {}
             error_message = detail.get("error") or ""
             raise RuntimeError(
-                f"Fetching price from the server failed: {error_message}"
+                f"Fetching ticker from the server failed: {error_message}"
             )
         return response_data
 
     async def get_depth(self, symbol: str, limit: int) -> dict[str, Any]:
         async with httpx.AsyncClient() as client:
             response = await client.get(
-                f"{self._api_endpoint}/v1/ticker",
+                f"{self._api_endpoint}/v1/depth",
                 params={"symbol": symbol, "limit": limit},
             )
         response_data: dict[str, Any] = response.json()
@@ -214,7 +214,22 @@ class AsyncClient:
             detail = response_data.get("detail") or {}
             error_message = detail.get("error") or ""
             raise RuntimeError(
-                f"Fetching price from the server failed: {error_message}"
+                f"Fetching market depth from the server failed: {error_message}"
+            )
+        return response_data
+
+    async def get_exchange_info(self, symbol: str) -> dict[str, Any]:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{self._api_endpoint}/v1/exchangeInfo",
+                params={"symbol": symbol},
+            )
+        response_data: dict[str, Any] = response.json()
+        if response.status_code == 400:
+            detail = response_data.get("detail") or {}
+            error_message = detail.get("error") or ""
+            raise RuntimeError(
+                f"Fetching exchange info from the server failed: {error_message}"
             )
         return response_data
 
