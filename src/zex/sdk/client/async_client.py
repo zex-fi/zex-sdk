@@ -10,7 +10,13 @@ import httpx
 from coincurve import PrivateKey
 from eth_hash.auto import keccak
 
-from zex.sdk.data_types import OrderSide, PlaceOrderRequest, TradeInfo, WithdrawRequest
+from zex.sdk.data_types import (
+    Asset,
+    OrderSide,
+    PlaceOrderRequest,
+    TradeInfo,
+    WithdrawRequest,
+)
 
 
 class AsyncClient:
@@ -175,12 +181,9 @@ class AsyncClient:
                 params={"symbol": symbol},
             )
         response_data = response.json()
-        if response.status_code == 400:
-            detail = response_data.get("detail") or {}
-            error_message = detail.get("error") or ""
-            raise RuntimeError(
-                f"Fetching price from the server failed: {error_message}"
-            )
+        if response.status_code == 422:
+            detail = response_data.get("detail") or []
+            raise RuntimeError(f"Fetching price from the server failed: {detail}")
         price: float | None = response_data.get("price")
         if price is None:
             raise RuntimeError(
@@ -195,12 +198,9 @@ class AsyncClient:
                 params={"symbol": symbol},
             )
         response_data: dict[str, Any] = response.json()
-        if response.status_code == 400:
-            detail = response_data.get("detail") or {}
-            error_message = detail.get("error") or ""
-            raise RuntimeError(
-                f"Fetching ticker from the server failed: {error_message}"
-            )
+        if response.status_code == 422:
+            detail = response_data.get("detail") or []
+            raise RuntimeError(f"Fetching ticker from the server failed: {detail}")
         return response_data
 
     async def get_depth(self, symbol: str, limit: int) -> dict[str, Any]:
@@ -210,11 +210,10 @@ class AsyncClient:
                 params={"symbol": symbol, "limit": limit},
             )
         response_data: dict[str, Any] = response.json()
-        if response.status_code == 400:
-            detail = response_data.get("detail") or {}
-            error_message = detail.get("error") or ""
+        if response.status_code == 422:
+            detail = response_data.get("detail") or []
             raise RuntimeError(
-                f"Fetching market depth from the server failed: {error_message}"
+                f"Fetching market depth from the server failed: {detail}"
             )
         return response_data
 
@@ -225,15 +224,14 @@ class AsyncClient:
                 params={"symbol": symbol},
             )
         response_data: dict[str, Any] = response.json()
-        if response.status_code == 400:
-            detail = response_data.get("detail") or {}
-            error_message = detail.get("error") or ""
+        if response.status_code == 422:
+            detail = response_data.get("detail") or []
             raise RuntimeError(
-                f"Fetching exchange info from the server failed: {error_message}"
+                f"Fetching exchange info from the server failed: {detail}"
             )
         return response_data
 
-    async def get_trades(self) -> list[TradeInfo]:
+    async def get_user_trades(self) -> list[TradeInfo]:
         if self.user_id is None:
             raise RuntimeError("The Zex client is not registered.")
         async with httpx.AsyncClient() as client:
@@ -242,11 +240,10 @@ class AsyncClient:
                 params={"id": self.user_id},
             )
         response_data = response.json()
-        if response.status_code == 400:
-            detail = response_data.get("detail") or {}
-            error_message = detail.get("error") or ""
+        if response.status_code == 422:
+            detail = response_data.get("detail") or []
             raise RuntimeError(
-                f"Fetching exchange info from the server failed: {error_message}"
+                f"Fetching user trades from the server failed. Detail: {detail}"
             )
         if not isinstance(response_data, list):
             raise RuntimeError("Received invalid response for trades.")
@@ -257,6 +254,28 @@ class AsyncClient:
         except Exception as e:
             raise RuntimeError(f"Parsing trades response failed: {e}")
         return trades
+
+    async def get_user_assets(self) -> list[Asset]:
+        if self.user_id is None:
+            raise RuntimeError("The Zex client is not registered.")
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{self._api_endpoint}/v1/asset/getUserAsset",
+                params={"id": self.user_id},
+            )
+        response_data = response.json()
+        if response.status_code == 422:
+            detail = response_data.get("detail") or []
+            raise RuntimeError(f"Fetching user assets from the server failed: {detail}")
+        if not isinstance(response_data, list):
+            raise RuntimeError("Received invalid response for user assets.")
+        assets: list[Asset] = []
+        try:
+            for asset in response_data:
+                assets.append(Asset.model_validate(asset))
+        except Exception as e:
+            raise RuntimeError(f"Parsing assets response failed: {e}")
+        return assets
 
     def _create_register_message(self) -> bytes:
         message = "Welcome to ZEX."
