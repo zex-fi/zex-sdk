@@ -1,4 +1,5 @@
 from .asset import Asset as Asset
+from .order import Order as Order
 from .place_order_request import OrderSide as OrderSide
 from .place_order_request import PlaceOrderRequest as PlaceOrderRequest
 from .trade_info import TradeInfo as TradeInfo

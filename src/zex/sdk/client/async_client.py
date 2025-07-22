@@ -12,6 +12,7 @@ from eth_hash.auto import keccak
 
 from zex.sdk.data_types import (
     Asset,
+    Order,
     OrderSide,
     PlaceOrderRequest,
     TradeInfo,
@@ -276,6 +277,28 @@ class AsyncClient:
         except Exception as e:
             raise RuntimeError(f"Parsing assets response failed: {e}")
         return assets
+
+    async def get_user_orders(self) -> list[Order]:
+        if self.user_id is None:
+            raise RuntimeError("The Zex client is not registered.")
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{self._api_endpoint}/v1/user/orders",
+                params={"id": self.user_id},
+            )
+        response_data = response.json()
+        if response.status_code == 422:
+            detail = response_data.get("detail") or []
+            raise RuntimeError(f"Fetching user orders from the server failed: {detail}")
+        if not isinstance(response_data, list):
+            raise RuntimeError("Received invalid response for user orders.")
+        orders: list[Order] = []
+        try:
+            for order in response_data:
+                orders.append(Order.model_validate(order))
+        except Exception as e:
+            raise RuntimeError(f"Parsing orders response failed: {e}")
+        return orders
 
     def _create_register_message(self) -> bytes:
         message = "Welcome to ZEX."
