@@ -26,6 +26,11 @@ ServerResponseType = TypeVar("ServerResponseType")
 
 
 class AsyncClient:
+    """
+    The asynchronous client of Zex exchange supporting the main functionalities \
+    of the exchange API.
+    """
+
     def __init__(
         self,
         api_key: str | None = None,
