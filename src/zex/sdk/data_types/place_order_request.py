@@ -1,5 +1,6 @@
-from dataclasses import dataclass
 from enum import Enum
+
+from pydantic import BaseModel
 
 
 class OrderSide(str, Enum):
@@ -7,8 +8,7 @@ class OrderSide(str, Enum):
     SELL = "SELL"
 
 
-@dataclass
-class PlaceOrderRequest:
+class PlaceOrderRequest(BaseModel):
     base_token: str
     quote_token: str
     side: OrderSide

@@ -4,12 +4,25 @@ import asyncio
 import time
 from collections.abc import Iterable
 from struct import pack
+from typing import Any, TypeVar
 
 import httpx
 from coincurve import PrivateKey
 from eth_hash.auto import keccak
+from pydantic import TypeAdapter
 
-from zex.sdk.data_types import OrderSide, PlaceOrderRequest, WithdrawRequest
+from zex.sdk.data_types import (
+    Asset,
+    Order,
+    OrderSide,
+    PlaceOrderRequest,
+    TradeInfo,
+    Transfer,
+    Withdraw,
+    WithdrawRequest,
+)
+
+ServerResponseType = TypeVar("ServerResponseType")
 
 
 class AsyncClient:
@@ -69,7 +82,8 @@ class AsyncClient:
             )
             try:
                 user_id = await asyncio.wait_for(
-                    self._fetch_user_id_from_zex(client), timeout=self._register_timeout
+                    self._fetch_user_id_from_server(client),
+                    timeout=self._register_timeout,
                 )
             except asyncio.TimeoutError as exc:
                 raise RuntimeError("Registering user ID timed out.") from exc
@@ -147,6 +161,128 @@ class AsyncClient:
                 json=payload,
             )
 
+    async def get_server_time(self) -> int:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{self._api_endpoint}/v1/time",
+            )
+        response_data: dict[str, int] = response.json()
+        time = response_data.get("serverTime")
+        if time is None:
+            raise RuntimeError("The server did not return a proper response.")
+        return time
+
+    async def ping(self) -> bool:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{self._api_endpoint}/v1/ping",
+            )
+        if response.status_code == 200:
+            return True
+        return False
+
+    async def get_price(self, symbol: str) -> float:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{self._api_endpoint}/v1/ticker/price",
+                params={"symbol": symbol},
+            )
+        response_data = response.json()
+        if response.status_code == 422:
+            detail = response_data.get("detail") or []
+            raise RuntimeError(f"Fetching price from the server failed: {detail}")
+        price: float | None = response_data.get("price")
+        if price is None:
+            raise RuntimeError(
+                "Could not retrieve the price of symbol from the server."
+            )
+        return price
+
+    async def get_ticker(self, symbol: str) -> dict[str, Any]:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{self._api_endpoint}/v1/ticker",
+                params={"symbol": symbol},
+            )
+        response_data: dict[str, Any] = response.json()
+        if response.status_code == 422:
+            detail = response_data.get("detail") or []
+            raise RuntimeError(f"Fetching ticker from the server failed: {detail}")
+        return response_data
+
+    async def get_depth(self, symbol: str, limit: int) -> dict[str, Any]:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{self._api_endpoint}/v1/depth",
+                params={"symbol": symbol, "limit": limit},
+            )
+        response_data: dict[str, Any] = response.json()
+        if response.status_code == 422:
+            detail = response_data.get("detail") or []
+            raise RuntimeError(
+                f"Fetching market depth from the server failed: {detail}"
+            )
+        return response_data
+
+    async def get_exchange_info(self, symbol: str) -> dict[str, Any]:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{self._api_endpoint}/v1/exchangeInfo",
+                params={"symbol": symbol},
+            )
+        response_data: dict[str, Any] = response.json()
+        if response.status_code == 422:
+            detail = response_data.get("detail") or []
+            raise RuntimeError(
+                f"Fetching exchange info from the server failed: {detail}"
+            )
+        return response_data
+
+    async def get_user_trades(self) -> list[TradeInfo]:
+        if self.user_id is None:
+            raise RuntimeError("The Zex client is not registered.")
+        return await self._get_and_parse_response_from_server(
+            type_adapter=TypeAdapter(list[TradeInfo]),
+            api_path="/v1/user/trades",
+            params={"id": self.user_id},
+        )
+
+    async def get_user_assets(self) -> list[Asset]:
+        if self.user_id is None:
+            raise RuntimeError("The Zex client is not registered.")
+        return await self._get_and_parse_response_from_server(
+            type_adapter=TypeAdapter(list[Asset]),
+            api_path="/v1/asset/getUserAsset",
+            params={"id": self.user_id},
+        )
+
+    async def get_user_orders(self) -> list[Order]:
+        if self.user_id is None:
+            raise RuntimeError("The Zex client is not registered.")
+        return await self._get_and_parse_response_from_server(
+            type_adapter=TypeAdapter(list[Order]),
+            api_path="/v1/user/orders",
+            params={"id": self.user_id},
+        )
+
+    async def get_user_transfers(self) -> list[Transfer]:
+        if self.user_id is None:
+            raise RuntimeError("The Zex client is not registered.")
+        return await self._get_and_parse_response_from_server(
+            type_adapter=TypeAdapter(list[Transfer]),
+            api_path="/v1/user/transfers",
+            params={"id": self.user_id},
+        )
+
+    async def get_user_withdraws(self, chain: str) -> list[Withdraw]:
+        if self.user_id is None:
+            raise RuntimeError("The Zex client is not registered.")
+        return await self._get_and_parse_response_from_server(
+            type_adapter=TypeAdapter(list[Withdraw]),
+            api_path="/v1/user/withdraws",
+            params={"id": self.user_id, "chain": chain},
+        )
+
     def _create_register_message(self) -> bytes:
         message = "Welcome to ZEX."
         message = "".join(
@@ -154,7 +290,7 @@ class AsyncClient:
         )
         return message.encode("ascii")
 
-    async def _fetch_user_id_from_zex(self, client: httpx.AsyncClient) -> int:
+    async def _fetch_user_id_from_server(self, client: httpx.AsyncClient) -> int:
         while True:
             response = await client.get(
                 f"{self._api_endpoint}/v1/user/id?public={self.public_key.hex()}",  # noqa: E501
@@ -275,3 +411,27 @@ class AsyncClient:
 
         transaction_data += signature
         return transaction_data
+
+    async def _get_and_parse_response_from_server(
+        self,
+        type_adapter: TypeAdapter[ServerResponseType],
+        api_path: str,
+        params: dict[str, Any] | None = None,
+    ) -> ServerResponseType:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{self._api_endpoint}{api_path}",
+                params=params,
+            )
+
+        response_data = response.json()
+        if response.status_code == 422:
+            detail = response_data.get("detail") or []
+            raise RuntimeError(
+                f"Fetching response from the server failed. Detail: {detail}"
+            )
+
+        try:
+            return type_adapter.validate_python(response_data)
+        except Exception as e:
+            raise RuntimeError(f"Parsing response failed with error: {e}") from e

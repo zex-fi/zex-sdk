@@ -1,8 +1,7 @@
-from dataclasses import dataclass
+from pydantic import BaseModel
 
 
-@dataclass
-class WithdrawRequest:
+class WithdrawRequest(BaseModel):
     token_chain: str
     token_name: str
     amount: str
