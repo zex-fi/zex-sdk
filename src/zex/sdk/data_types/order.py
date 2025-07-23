@@ -7,6 +7,6 @@ class Order(BaseModel):
     quote_token: str
     ammount: float
     price: float
-    t: float
+    t: float  # noqa: VNE001
     nonce: int
     slice: str

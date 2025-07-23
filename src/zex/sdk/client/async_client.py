@@ -434,4 +434,4 @@ class AsyncClient:
         try:
             return type_adapter.validate_python(response_data)
         except Exception as e:
-            raise RuntimeError(f"Parsing response failed with error: {e}")
+            raise RuntimeError(f"Parsing response failed with error: {e}") from e
