@@ -26,6 +26,11 @@ ServerResponseType = TypeVar("ServerResponseType")
 
 
 class AsyncClient:
+    """
+    The asynchronous client of Zex exchange supporting the main functionalities \
+    of the exchange API.
+    """
+
     def __init__(
         self,
         api_key: str | None = None,
@@ -54,11 +59,31 @@ class AsyncClient:
     async def create(
         cls, api_key: str | None = None, testnet: bool = True
     ) -> AsyncClient:
+        """
+        Create a registered instance of asynchronous Zex client to use functionalities \
+        provided by the Zex exchange.
+
+        .. warning::
+            The user of this class should only use this method to instantiate. The
+            `__init__` method of this class is for internal use only.
+
+        :param api_key: The API key used to register with Zex exchange servers and sign \
+        the transactions.
+        :param testnet: Whether or not to submit transactions into Zex testnet.
+        """
         client = cls(api_key, testnet)
         await client.register_user_id()
         return client
 
     async def register_user_id(self) -> None:
+        """
+        Register the user ID with Zex exchange. Some methods the client to be registered \
+        to be able to take effect in Zex server.
+
+        .. note:
+            The :py:meth:`~AsyncClient.create` method automatically calls this method and registers
+            the client.
+        """
         if self.user_id is not None:
             return
 
@@ -90,6 +115,14 @@ class AsyncClient:
         self.user_id = user_id
 
     async def place_batch_order(self, orders: Iterable[PlaceOrderRequest]) -> None:
+        """
+        Place a batch of orders in Zex exchange.
+
+        .. note:
+            The client should be registered before calling this method.
+
+        :param orders: The batch of orders to be placed in the exchange.
+        """
         if self.user_id is None:
             raise RuntimeError("The Zex client is not registered.")
 
@@ -121,6 +154,15 @@ class AsyncClient:
             )
 
     async def cancel_batch_order(self, signed_orders: Iterable[bytes]) -> None:
+        """
+        Cancel a batch of orders in Zex exchange.
+
+        .. note:
+            The client should be registered before calling this method.
+
+        :param signed_orders: The batch signed order transactions that were placed in \
+            the exchange to be canceled.
+        """
         payload = []
         for signed_order in signed_orders:
             payload.append(self._create_sigend_cancel_order_transaction(signed_order))
@@ -133,6 +175,14 @@ class AsyncClient:
             )
 
     async def withdraw(self, withdraw_request: WithdrawRequest) -> None:
+        """
+        Withdraw from Zex exchange.
+
+        .. note:
+            The client should be registered before calling this method.
+
+        :param withdraw_request: The withdraw request containing the required fields.
+        """
         if self.user_id is None:
             raise RuntimeError("The Zex client is not registered.")
 
@@ -154,6 +204,14 @@ class AsyncClient:
             )
 
     async def deposit(self, transaction: bytes) -> None:
+        """
+        Deposit in Zex exchange.
+
+        .. note:
+            The client should be registered before calling this method.
+
+        :param transaction: The signed transaction for depositing in Zex exchange.
+        """
         payload = [transaction.decode("latin-1")]
         async with httpx.AsyncClient() as client:
             await client.post(
@@ -162,6 +220,7 @@ class AsyncClient:
             )
 
     async def get_server_time(self) -> int:
+        """Get the server time."""
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 f"{self._api_endpoint}/v1/time",
@@ -173,6 +232,7 @@ class AsyncClient:
         return time
 
     async def ping(self) -> bool:
+        """Whether the server responds to a ping request."""
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 f"{self._api_endpoint}/v1/ping",
@@ -182,6 +242,11 @@ class AsyncClient:
         return False
 
     async def get_price(self, symbol: str) -> float:
+        """
+        Get the price of a market.
+
+        :param symbol: The symbol of the market whose price to query.
+        """
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 f"{self._api_endpoint}/v1/ticker/price",
@@ -199,6 +264,11 @@ class AsyncClient:
         return price
 
     async def get_ticker(self, symbol: str) -> dict[str, Any]:
+        """
+        Get the ticker of a certain market.
+
+        :param symbol: The symbol of the market to get the ticker of.
+        """
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 f"{self._api_endpoint}/v1/ticker",
@@ -211,6 +281,12 @@ class AsyncClient:
         return response_data
 
     async def get_depth(self, symbol: str, limit: int) -> dict[str, Any]:
+        """
+        Get the market depth.
+
+        :param symbol: The symbol of the market to get the depth of.
+        :param limit: The limit of the queried depth.
+        """
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 f"{self._api_endpoint}/v1/depth",
@@ -225,6 +301,11 @@ class AsyncClient:
         return response_data
 
     async def get_exchange_info(self, symbol: str) -> dict[str, Any]:
+        """
+        Get the exchange info for a specified market.
+
+        :parma symbol: The symbol of the market to get the exchange info of.
+        """
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 f"{self._api_endpoint}/v1/exchangeInfo",
@@ -239,6 +320,12 @@ class AsyncClient:
         return response_data
 
     async def get_user_trades(self) -> list[TradeInfo]:
+        """
+        Get the list of all trades of the user.
+
+        .. note:
+            The client should be registered before calling this method.
+        """
         if self.user_id is None:
             raise RuntimeError("The Zex client is not registered.")
         return await self._get_and_parse_response_from_server(
@@ -248,6 +335,12 @@ class AsyncClient:
         )
 
     async def get_user_assets(self) -> list[Asset]:
+        """
+        Get the list of all assets of the user.
+
+        .. note:
+            The client should be registered before calling this method.
+        """
         if self.user_id is None:
             raise RuntimeError("The Zex client is not registered.")
         return await self._get_and_parse_response_from_server(
@@ -257,6 +350,12 @@ class AsyncClient:
         )
 
     async def get_user_orders(self) -> list[Order]:
+        """
+        Get the list of all the placed orders of the user.
+
+        .. note:
+            The client should be registered before calling this method.
+        """
         if self.user_id is None:
             raise RuntimeError("The Zex client is not registered.")
         return await self._get_and_parse_response_from_server(
@@ -266,6 +365,12 @@ class AsyncClient:
         )
 
     async def get_user_transfers(self) -> list[Transfer]:
+        """
+        Get the list of all transfers of the user.
+
+        .. note:
+            The client should be registered before calling this method.
+        """
         if self.user_id is None:
             raise RuntimeError("The Zex client is not registered.")
         return await self._get_and_parse_response_from_server(
@@ -275,6 +380,12 @@ class AsyncClient:
         )
 
     async def get_user_withdraws(self, chain: str) -> list[Withdraw]:
+        """
+        Get the list of all withdraws of the user.
+
+        .. note:
+            The client should be registered before calling this method.
+        """
         if self.user_id is None:
             raise RuntimeError("The Zex client is not registered.")
         return await self._get_and_parse_response_from_server(
