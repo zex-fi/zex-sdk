@@ -1,4 +1,4 @@
-name: CI
+name: CI and Release
 
 on:
   pull_request:
@@ -8,11 +8,12 @@ on:
       - reopened
 
   push:
-    branches:
-      - main
+    tags:
+      - "v*.*.*"  # Trigger only on version tags (e.g., v1.2.3)
 
 jobs:
-  build:
+  ci:
+    name: Run CI checks
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
@@ -22,7 +23,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.11'
 
       - name: Install PDM
         run: python -m pip install pdm
@@ -38,3 +39,41 @@ jobs:
 
       - name: Run tests
         run: pdm test
+
+  release:
+    name: Release to PyPI
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required to get full Git history and tags
+
+      - name: Ensure tag is on main
+        run: |
+          BRANCH=$(git branch -r --contains ${{ github.ref }} | grep origin/main || true)
+          if [ -z "$BRANCH" ]; then
+            echo "Tag is not on main branch — aborting release."
+            exit 1
+          fi
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install PDM
+        run: python -m pip install pdm
+
+      - name: Install dependencies
+        run: pdm install
+
+      - name: Build the project
+        run: pdm build
+
+      - name: Publish to PyPI
+        env:
+          PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          pdm publish --username __token__ --password $PYPI_TOKEN
