@@ -1,5 +1,5 @@
-from typing import TypedDict
+from pydantic import BaseModel
 
 
-class SocketMessage(TypedDict):
+class SocketMessage(BaseModel):
     pass

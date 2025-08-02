@@ -22,7 +22,7 @@ class BaseSocket:
     ) -> None:
         self._client = client
         self._callback = callback
-        self._websocket_endpoint = "ws://api.zex.finance"
+        self._websocket_endpoint = "wss://api.zex.finance"
         self._retry_timeout = retry_timeout
 
         self._websocket_task: asyncio.Task[None] | None = None
@@ -77,7 +77,7 @@ class BaseSocket:
     async def _on_open(self, websocket: ClientConnection) -> None:
         subscribe_message = json.dumps({
             "method": "SUBSCRIBE",
-            "params": [f"{self._client.public_key.hex()}{self.stream_name}"],
+            "params": [f"{self._client.user_id}{self.stream_name}"],
             "id": 1,
         })
         await websocket.send(subscribe_message)
