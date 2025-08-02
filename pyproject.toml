@@ -122,11 +122,11 @@ test = {composite = [
 ]}
 
 unittest = {composite = [
-    "pytest tests/unit {args:.}",
+    "pytest tests/unit {args}",
 ]}
 
 systemtest = {composite = [
-    "pytest tests/system {args:.}",
+    "pytest tests/system {args}",
 ]}
 
 [tool.pdm.version]
