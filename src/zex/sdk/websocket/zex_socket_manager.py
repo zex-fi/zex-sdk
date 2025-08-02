@@ -3,7 +3,6 @@ from typing import Any
 
 from zex.sdk.client import AsyncClient
 from zex.sdk.websocket.execution_report_socket import ExecutionReportSocket
-from zex.sdk.websocket.socket_message import SocketMessage
 
 
 class ZexSocketManager:
@@ -16,7 +15,7 @@ class ZexSocketManager:
         self._client = client
 
     async def execution_report_socket(
-        self, callback: Callable[[SocketMessage], Awaitable[Any]]
+        self, callback: Callable[[Any], Awaitable[Any]]
     ) -> ExecutionReportSocket:
         """
         Create an instance of the execution report socket to provide live reports \
