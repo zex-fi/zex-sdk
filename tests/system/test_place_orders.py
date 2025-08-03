@@ -111,9 +111,12 @@ async def test_given_registered_client_when_cancel_order_then_cancel_status_orde
         callback=extract_new_order_status
     )
     async with execution_report_socket:
-        signed_orders = await client.place_batch_order([order])
+        place_order_results = await client.place_batch_order([order])
         await asyncio.sleep(1)
-        await client.cancel_batch_order(signed_orders)
+        await client.cancel_batch_order(
+            place_order_result.signed_order_transaction
+            for place_order_result in place_order_results
+        )
         await asyncio.sleep(1)
 
     first_status = updated_order_status[0]
