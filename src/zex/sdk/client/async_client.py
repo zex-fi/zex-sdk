@@ -16,6 +16,7 @@ from zex.sdk.data_types import (
     Order,
     OrderSide,
     PlaceOrderRequest,
+    PlaceOrderResult,
     TradeInfo,
     Transfer,
     Withdraw,
@@ -114,7 +115,9 @@ class AsyncClient:
                 raise RuntimeError("Registering user ID timed out.") from exc
         self.user_id = user_id
 
-    async def place_batch_order(self, orders: Iterable[PlaceOrderRequest]) -> None:
+    async def place_batch_order(
+        self, orders: Iterable[PlaceOrderRequest]
+    ) -> Iterable[PlaceOrderResult]:
         """
         Place a batch of orders in Zex exchange.
 
@@ -129,7 +132,7 @@ class AsyncClient:
         orders = list(orders)
 
         if len(orders) == 0:
-            return
+            return []
 
         async with httpx.AsyncClient() as client:
             nonce_response = await client.get(
@@ -139,13 +142,21 @@ class AsyncClient:
             assert self.nonce is not None, "For typing."
 
         payload = []
+        place_order_results = []
         for order in orders:
             signed_order = self._create_signed_order_transaction(order)
+            place_order_results.append(
+                PlaceOrderResult(
+                    place_order_request=order,
+                    nonce=self.nonce,
+                    signed_order_transaction=signed_order,
+                )
+            )
             self.nonce += 1
             payload.append(signed_order.decode("latin-1"))
 
         if not payload:
-            return
+            return []
 
         async with httpx.AsyncClient() as client:
             await client.post(
@@ -153,7 +164,9 @@ class AsyncClient:
                 json=payload,
             )
 
-    async def cancel_batch_order(self, signed_orders: Iterable[bytes]) -> None:
+        return place_order_results
+
+    async def cancel_batch_order(self, signed_placed_orders: Iterable[bytes]) -> None:
         """
         Cancel a batch of orders in Zex exchange.
 
@@ -164,8 +177,11 @@ class AsyncClient:
             the exchange to be canceled.
         """
         payload = []
-        for signed_order in signed_orders:
-            payload.append(self._create_sigend_cancel_order_transaction(signed_order))
+        for signed_placed_order in signed_placed_orders:
+            signed_order = self._create_sigend_cancel_order_transaction(
+                signed_placed_order
+            )
+            payload.append(signed_order.decode("latin-1"))
         if not payload:
             return
         async with httpx.AsyncClient() as client:
@@ -435,7 +451,7 @@ class AsyncClient:
         )
         epoch = int(time.time())
 
-        transaction_data += pack(">II", epoch, self.nonce) + self.public_key
+        transaction_data += pack(">II", epoch, self.nonce) + pack(">Q", self.user_id)
 
         message = (
             "v: 1\n"
@@ -446,7 +462,7 @@ class AsyncClient:
             f"price: {order.price}\n"
             f"t: {epoch}\n"
             f"nonce: {self.nonce}\n"
-            f"public: {self.public_key.hex()}\n"
+            f"user_id: {self.user_id}\n"
         )
         message = "\x19Ethereum Signed Message:\n" + str(len(message)) + message
 
@@ -462,15 +478,15 @@ class AsyncClient:
         transaction_data = (
             pack(">B", self._version)
             + pack(">B", self._cancel_command)
-            + signed_order[1:-97]
-            + self.public_key
+            + signed_order[1:-72]
+            + pack(">Q", self.user_id)
         )
 
         message = (
             f"v: {transaction_data[0]}\n"
             "name: cancel\n"
-            f"slice: {signed_order[1:-97].hex()}\n"
-            f"public: {signed_order[-97:-64].hex()}\n"
+            f"slice: {signed_order[1:-72].hex()}\n"
+            f"user_id: {self.user_id}\n"
         )
         message = "".join(
             ("\x19Ethereum Signed Message:\n", str(len(message)), message)

@@ -37,8 +37,13 @@ jobs:
       - name: Lint
         run: pdm lint
 
-      - name: Run tests
-        run: pdm test
+      - name: Run unit tests
+        run: pdm unittest
+      
+      - name: Run system tests
+        env:
+          ZEX_API_KEY: ${{ secrets.ZEX_API_KEY }}
+        run: pdm systemtest
 
   release:
     name: Release to PyPI
