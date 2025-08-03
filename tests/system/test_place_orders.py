@@ -75,7 +75,7 @@ async def test_given_registered_client_when_place_order_then_new_status_order_me
     )
     async with execution_report_socket:
         await client.place_batch_order([order])
-        await asyncio.sleep(1)
+        await asyncio.sleep(2)
 
     status = updated_order_status.pop()
 
