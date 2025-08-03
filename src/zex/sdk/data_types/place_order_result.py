@@ -8,6 +8,6 @@ class PlaceOrderResult(BaseModel):
         ..., description="The place order request data class."
     )
     nonce: int = Field(..., description="The nonce of the placed order.")
-    signed_transaction: bytes = Field(
+    signed_order_transaction: bytes = Field(
         ..., description="The signed transaction sent to the exchange server."
     )

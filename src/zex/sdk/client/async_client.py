@@ -16,6 +16,7 @@ from zex.sdk.data_types import (
     Order,
     OrderSide,
     PlaceOrderRequest,
+    PlaceOrderResult,
     TradeInfo,
     Transfer,
     Withdraw,
@@ -116,7 +117,7 @@ class AsyncClient:
 
     async def place_batch_order(
         self, orders: Iterable[PlaceOrderRequest]
-    ) -> Iterable[bytes]:
+    ) -> Iterable[PlaceOrderResult]:
         """
         Place a batch of orders in Zex exchange.
 
@@ -141,10 +142,16 @@ class AsyncClient:
             assert self.nonce is not None, "For typing."
 
         payload = []
-        signed_orders = []
+        place_order_results = []
         for order in orders:
             signed_order = self._create_signed_order_transaction(order)
-            signed_orders.append(signed_order)
+            place_order_results.append(
+                PlaceOrderResult(
+                    place_order_request=order,
+                    nonce=self.nonce,
+                    signed_order_transaction=signed_order,
+                )
+            )
             self.nonce += 1
             payload.append(signed_order.decode("latin-1"))
 
@@ -157,7 +164,7 @@ class AsyncClient:
                 json=payload,
             )
 
-        return signed_orders
+        return place_order_results
 
     async def cancel_batch_order(self, signed_placed_orders: Iterable[bytes]) -> None:
         """
