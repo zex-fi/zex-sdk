@@ -75,7 +75,7 @@ async def test_given_registered_client_when_place_order_then_new_status_order_me
     )
     async with execution_report_socket:
         await client.place_batch_order([order])
-        await asyncio.sleep(1)
+        await asyncio.sleep(2)
 
     status = updated_order_status.pop()
 
@@ -83,7 +83,6 @@ async def test_given_registered_client_when_place_order_then_new_status_order_me
     assert status == "NEW"
 
 
-@pytest.mark.skip
 @pytest.mark.asyncio
 async def test_given_registered_client_when_cancel_order_then_cancel_status_order_message_arrives_from_websocket(
     zex_api_key: str,
@@ -111,10 +110,13 @@ async def test_given_registered_client_when_cancel_order_then_cancel_status_orde
         callback=extract_new_order_status
     )
     async with execution_report_socket:
-        signed_orders = await client.place_batch_order([order])
-        await asyncio.sleep(1)
-        await client.cancel_batch_order(signed_orders)
-        await asyncio.sleep(1)
+        place_order_results = await client.place_batch_order([order])
+        await asyncio.sleep(2)
+        await client.cancel_batch_order(
+            place_order_result.signed_order_transaction
+            for place_order_result in place_order_results
+        )
+        await asyncio.sleep(2)
 
     first_status = updated_order_status[0]
     second_status = updated_order_status[1]
