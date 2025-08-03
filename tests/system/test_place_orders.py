@@ -83,7 +83,6 @@ async def test_given_registered_client_when_place_order_then_new_status_order_me
     assert status == "NEW"
 
 
-@pytest.mark.skip
 @pytest.mark.asyncio
 async def test_given_registered_client_when_cancel_order_then_cancel_status_order_message_arrives_from_websocket(
     zex_api_key: str,
