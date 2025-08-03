@@ -478,14 +478,14 @@ class AsyncClient:
         transaction_data = (
             pack(">B", self._version)
             + pack(">B", self._cancel_command)
-            + signed_order[1:-97]
+            + signed_order[1:-72]
             + pack(">Q", self.user_id)
         )
 
         message = (
             f"v: {transaction_data[0]}\n"
             "name: cancel\n"
-            f"slice: {signed_order[1:-97].hex()}\n"
+            f"slice: {signed_order[1:-72].hex()}\n"
             f"user_id: {self.user_id}\n"
         )
         message = "".join(
