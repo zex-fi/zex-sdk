@@ -205,6 +205,7 @@ layers = [
     "websocket",
     "client",
     "data_types",
+    "__init__",
 ]
 exhaustive = true
 
