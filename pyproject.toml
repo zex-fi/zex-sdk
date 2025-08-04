@@ -133,10 +133,6 @@ systemtest = {composite = [
 source = "scm"
 tag_regex = '^v(?P<version>\d+\.\d+\.\d+(-(alpha|beta|dev|rc))?)$'
 
-[tool.pdm.build]
-package-dir = "src/"
-source-includes = ["src/", "src/zex/"]
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = ["--import-mode=importlib", "--cov-context=test", "--disable-warnings"]
