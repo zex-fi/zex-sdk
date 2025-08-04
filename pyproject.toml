@@ -24,6 +24,9 @@ dependencies = [
     "eth-typing>=5.2.1",
 ]
 
+[tool.pdm.build]
+includes = ["src/"]
+
 [tool.pdm.dev-dependencies]
 lint = [
     "autoflake==2.2.1",
@@ -195,14 +198,16 @@ class-attributes-order = [
 ]
 
 [tool.importlinter]
-root_package = "zex"
+root_package = "zex.sdk"
 
 [[tool.importlinter.contracts]]
 name = "Root Layers"
 type = "layers"
-containers = ["zex"]
+containers = ["zex.sdk"]
 layers = [
-    "sdk",
+    "websocket",
+    "client",
+    "data_types",
 ]
 exhaustive = true
 
