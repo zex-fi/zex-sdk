@@ -3,7 +3,7 @@ requires = ["pdm-backend==2.1.8"]
 build-backend = "pdm.backend"
 
 [project]
-name = "zex.sdk"
+name = "zex-sdk"
 requires-python = ">=3.11,<3.12"
 dynamic = ["version"]
 description = "Python client for Zex exchange."
