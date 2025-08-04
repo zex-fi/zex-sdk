@@ -3,7 +3,7 @@ requires = ["pdm-backend==2.1.8"]
 build-backend = "pdm.backend"
 
 [project]
-name = "zex-sdk"
+name = "zex.sdk"
 requires-python = ">=3.11,<3.12"
 dynamic = ["version"]
 description = "Python client for Zex exchange."
@@ -22,9 +22,6 @@ dependencies = [
     "websockets_proxy>=0.1.3,<1",
     "websockets>=15.0.1,<16",
     "eth-typing>=5.2.1",
-]
-packages = [
-  { include = "zex", from = "src" }
 ]
 
 [tool.pdm.dev-dependencies]
@@ -135,6 +132,9 @@ systemtest = {composite = [
 [tool.pdm.version]
 source = "scm"
 tag_regex = '^v(?P<version>\d+\.\d+\.\d+(-(alpha|beta|dev|rc))?)$'
+
+[tool.pdm.build]
+package-dir = "src"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
