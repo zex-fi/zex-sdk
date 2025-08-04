@@ -198,16 +198,14 @@ class-attributes-order = [
 ]
 
 [tool.importlinter]
-root_package = "zex.sdk"
+root_package = "zex"
 
 [[tool.importlinter.contracts]]
 name = "Root Layers"
 type = "layers"
-containers = ["zex.sdk"]
+containers = ["zex"]
 layers = [
-    "websocket",
-    "client",
-    "data_types",
+    "sdk",
 ]
 exhaustive = true
 
