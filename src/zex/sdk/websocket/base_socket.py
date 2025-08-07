@@ -34,6 +34,17 @@ class BaseSocket:
         pass
 
     async def __aenter__(self) -> None:
+        await self.start()
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException],  # noqa: F841
+        exc_value: BaseException,  # noqa: F841
+        exc_tb: TracebackType,  # noqa: F841
+    ) -> None:
+        await self.stop()
+
+    async def start(self) -> None:
         await self._client.register_user_id()
         startup_event = asyncio.Event()
         self._websocket_task = asyncio.create_task(
@@ -44,12 +55,7 @@ class BaseSocket:
         except asyncio.TimeoutError:
             return
 
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException],  # noqa: F841
-        exc_value: BaseException,  # noqa: F841
-        exc_tb: TracebackType,  # noqa: F841
-    ) -> None:
+    async def stop(self) -> None:
         assert self._websocket_task is not None
         self._websocket_task.cancel()
         with suppress(asyncio.CancelledError):
