@@ -42,7 +42,8 @@ jobs:
       
       - name: Run system tests
         env:
-          ZEX_API_KEY: ${{ secrets.ZEX_API_KEY }}
+          ZEX_DEV_API_KEY: ${{ secrets.ZEX_DEV_API_KEY }}
+          ZEX_MAIN_API_KEY: ${{ secrets.ZEX_MAIN_API_KEY }}
         run: pdm systemtest
 
   release:
