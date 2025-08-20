@@ -86,7 +86,7 @@ async def test_given_registered_client_when_place_order_then_new_status_order_me
 @pytest.mark.parametrize(
     "base_token, quote_token, side, volume, price",
     [
-        # The prices are too high/low so they won't get filled.
+        # NOTE: The prices are too high/low so they won't get filled.
         ("BTC", "zUSDT", OrderSide.BUY, 0.0001, 30000.0),  # Regular BTC buy.
         ("BTC", "zUSDT", OrderSide.SELL, 0.0001, 300000.0),  # Regular BTC sell.
         ("ETH", "zUSDT", OrderSide.BUY, 0.0001, 3000.0),  # Regular ETH buy.
@@ -94,7 +94,16 @@ async def test_given_registered_client_when_place_order_then_new_status_order_me
         ("BTC", "zUSDT", OrderSide.BUY, 0.00001, 30000.0),  # 5 decimal digit volume.
         ("BTC", "zUSDT", OrderSide.BUY, 0.000001, 30000.0),  # 6 decimal digit volume.
         ("BTC", "zUSDT", OrderSide.BUY, 0.0000001, 30000.0),  # 7 decimal digit volume.
-        ("ETH", "zUSDT", OrderSide.SELL, 0.000171123, 300000.0),  # non-zero decimals.
+        ("BTC", "zUSDT", OrderSide.BUY, 0.000171, 30000.0),  # 6 Non-zero decimals.
+        ("BTC", "zUSDT", OrderSide.BUY, 0.0001711, 30000.0),  # 7 Non-zero decimals.
+        ("BTC", "zUSDT", OrderSide.BUY, 0.00017112, 30000.0),  # 8 Non-zero decimals.
+        ("BTC", "zUSDT", OrderSide.BUY, 0.000171123, 30000.0),  # 9 Non-zero decimals.
+        ("BTC", "zUSDT", OrderSide.BUY, 0.0001711231, 30000.0),  # 10 Non-zero decimals.
+        ("BTC", "zUSDT", OrderSide.BUY, 0.00017112312, 30000.0),  # 11 Non-zero decimals.
+        ("BTC", "zUSDT", OrderSide.BUY, 0.000171123129, 30000.0),  # 12 Non-zero decimals.
+        ("BTC", "zUSDT", OrderSide.BUY, 0.0001711231241, 30000.0),  # 13 Non-zero decimals.
+        ("ETH", "zUSDT", OrderSide.SELL, 0.000171123, 300000.0),  # Non-zero decimals ETH.
+        ("ETH", "zUSDT", OrderSide.SELL, 0.000171120, 300000.0),  # With leading zero.
     ],
 )
 @pytest.mark.asyncio
