@@ -22,7 +22,11 @@ class BaseSocket:
     ) -> None:
         self._client = client
         self._callback = callback
-        self._websocket_endpoint = "wss://api.zex.finance"
+        self._websocket_endpoint = (
+            "wss://api-dev.zex.finance"
+            if self._client.testnet
+            else "wss://api.zex.finance"
+        )
         self._retry_timeout = retry_timeout
 
         self._websocket_task: asyncio.Task[None] | None = None
