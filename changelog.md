@@ -11,11 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Make possible to use both dev and main version of Zex exchange via `testnet` config.
 
+
 ## [0.2.0] - 2025-08-07
 
 ### Added
 
 - `start` and `stop` methods for websockets to be able to manage in a more fine-tuned manner.
+
 
 ## [0.1.0] - 2025-07-26
 
