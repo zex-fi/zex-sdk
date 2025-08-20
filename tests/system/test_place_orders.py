@@ -52,7 +52,7 @@ async def test_given_registered_client_when_place_order_then_new_status_order_me
     zex_api_key: str,
 ) -> None:
     # Given: A registered client
-    client = await AsyncClient.create(api_key=zex_api_key)
+    client = await AsyncClient.create(api_key=zex_api_key, testnet=False)
     socket_manager = ZexSocketManager(client)
     order = PlaceOrderRequest(
         base_token="BTC",
@@ -83,19 +83,38 @@ async def test_given_registered_client_when_place_order_then_new_status_order_me
     assert status == "NEW"
 
 
+@pytest.mark.parametrize(
+    "base_token, quote_token, side, volume, price",
+    [
+        # The prices are too high/low so they won't get filled.
+        ("BTC", "zUSDT", OrderSide.BUY, 0.0001, 30000.0),  # Regular BTC buy.
+        ("BTC", "zUSDT", OrderSide.SELL, 0.0001, 300000.0),  # Regular BTC sell.
+        ("ETH", "zUSDT", OrderSide.BUY, 0.0001, 3000.0),  # Regular ETH buy.
+        ("ETH", "zUSDT", OrderSide.SELL, 0.0001, 300000.0),  # Regular ETH sell.
+        ("BTC", "zUSDT", OrderSide.BUY, 0.00001, 30000.0),  # 5 decimal digit volume.
+        ("BTC", "zUSDT", OrderSide.BUY, 0.000001, 30000.0),  # 6 decimal digit volume.
+        ("BTC", "zUSDT", OrderSide.BUY, 0.0000001, 30000.0),  # 7 decimal digit volume.
+        ("ETH", "zUSDT", OrderSide.SELL, 0.000171123, 300000.0),  # non-zero decimals.
+    ],
+)
 @pytest.mark.asyncio
 async def test_given_registered_client_when_cancel_order_then_cancel_status_order_message_arrives_from_websocket(
+    base_token: str,
+    quote_token: str,
+    side: OrderSide,
+    volume: float,
+    price: float,
     zex_api_key: str,
 ) -> None:
     # Given: A registered client
-    client = await AsyncClient.create(api_key=zex_api_key)
+    client = await AsyncClient.create(api_key=zex_api_key, testnet=False)
     socket_manager = ZexSocketManager(client)
     order = PlaceOrderRequest(
-        base_token="BTC",
-        quote_token="zUSDT",
-        side=OrderSide.BUY,
-        volume=0.0001,
-        price=30000.0,
+        base_token=base_token,
+        quote_token=quote_token,
+        side=side,
+        volume=volume,
+        price=price,
     )
 
     updated_order_status = []
