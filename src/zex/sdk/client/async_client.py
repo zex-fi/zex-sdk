@@ -60,6 +60,9 @@ class AsyncClient:
         self._deposit_command = ord("d")
         self._btc_deposit_command = ord("x")
 
+        self._price_digits = 2
+        self._volume_digits = 5
+
     @classmethod
     async def create(
         cls, api_key: str | None = None, testnet: bool = True
@@ -492,8 +495,8 @@ class AsyncClient:
 
         pair = order.base_token + order.quote_token
 
-        price = round(Decimal(order.price), 2)
-        volume = round(Decimal(order.volume), 5)
+        price = round(Decimal(order.price), self._price_digits)
+        volume = round(Decimal(order.volume), self._volume_digits)
         volume_mantissa, volume_exponent = self._to_scientific(volume)
         price_mantissa, price_exponent = self._to_scientific(price)
 
