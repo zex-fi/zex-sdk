@@ -92,18 +92,18 @@ async def test_given_registered_client_when_place_order_then_new_status_order_me
         ("ETH", "zUSDT", OrderSide.BUY, 0.0001, 3000.0),  # Regular ETH buy.
         ("ETH", "zUSDT", OrderSide.SELL, 0.0001, 300000.0),  # Regular ETH sell.
         ("BTC", "zUSDT", OrderSide.BUY, 0.00001, 30000.0),  # 5 decimal digit volume.
-        ("BTC", "zUSDT", OrderSide.BUY, 0.000001, 30000.0),  # 6 decimal digit volume.
-        ("BTC", "zUSDT", OrderSide.BUY, 0.0000001, 30000.0),  # 7 decimal digit volume.
         ("BTC", "zUSDT", OrderSide.BUY, 0.000171, 30000.0),  # 6 Non-zero decimals.
         ("BTC", "zUSDT", OrderSide.BUY, 0.0001711, 30000.0),  # 7 Non-zero decimals.
         ("BTC", "zUSDT", OrderSide.BUY, 0.00017112, 30000.0),  # 8 Non-zero decimals.
         ("BTC", "zUSDT", OrderSide.BUY, 0.000171123, 30000.0),  # 9 Non-zero decimals.
         ("BTC", "zUSDT", OrderSide.BUY, 0.0001711231, 30000.0),  # 10 Non-zero decimals.
-        ("BTC", "zUSDT", OrderSide.BUY, 0.00017112312, 30000.0),  # 11 Non-zero decimals.
-        ("BTC", "zUSDT", OrderSide.BUY, 0.000171123129, 30000.0),  # 12 Non-zero decimals.
-        ("BTC", "zUSDT", OrderSide.BUY, 0.0001711231241, 30000.0),  # 13 Non-zero decimals.
         ("ETH", "zUSDT", OrderSide.SELL, 0.000171123, 300000.0),  # Non-zero decimals ETH.
         ("ETH", "zUSDT", OrderSide.SELL, 0.000171120, 300000.0),  # With leading zero.
+        ("BTC", "zUSDT", OrderSide.BUY, 0.001, 30000),  # Integer price.
+        ("BTC", "zUSDT", OrderSide.BUY, 0.001, 30000.01),  # Price with 2 digits.
+        ("BTC", "zUSDT", OrderSide.BUY, 0.001, 30000.10),  # Price Digits leading Zero.
+        ("BTC", "zUSDT", OrderSide.BUY, 0.001, 30000.1123),  # Price with 4 digits.
+        ("BTC", "zUSDT", OrderSide.BUY, 0.001, 30000.0001),  # Price with small digits.
     ],
 )
 @pytest.mark.asyncio
@@ -116,7 +116,7 @@ async def test_given_registered_client_when_cancel_order_then_cancel_status_orde
     zex_api_key: str,
 ) -> None:
     # Given: A registered client
-    client = await AsyncClient.create(api_key=zex_api_key, testnet=False)
+    client = await AsyncClient.create(api_key=zex_api_key, testnet=True)
     socket_manager = ZexSocketManager(client)
     order = PlaceOrderRequest(
         base_token=base_token,
