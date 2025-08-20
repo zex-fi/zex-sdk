@@ -37,9 +37,11 @@ class AsyncClient:
         api_key: str | None = None,
         testnet: bool = True,
     ) -> None:
-        self._api_endpoint = "https://api.zex.finance"
+        self._api_endpoint = (
+            "https://api.dev.zex.finance" if testnet else "https://api.zex.finance"
+        )
         self._version = 1
-        self._testnet = testnet
+        self.testnet = testnet
 
         private_key_bytes = bytes.fromhex(api_key) if api_key is not None else None
         self._private_key = PrivateKey(secret=private_key_bytes)
