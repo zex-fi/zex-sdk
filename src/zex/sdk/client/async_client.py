@@ -38,7 +38,7 @@ class AsyncClient:
         testnet: bool = True,
     ) -> None:
         self._api_endpoint = (
-            "https://api.dev.zex.finance" if testnet else "https://api.zex.finance"
+            "https://api-dev.zex.finance" if testnet else "https://api.zex.finance"
         )
         self._version = 1
         self.testnet = testnet
