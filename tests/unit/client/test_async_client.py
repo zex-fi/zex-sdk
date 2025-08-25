@@ -103,7 +103,9 @@ async def test_place_batch_order_returns_without_orders_and_not_query_the_nonce(
 
 @pytest.mark.usefixtures("mock_zex_server")
 @pytest.mark.asyncio
-async def test_place_batch_order_should_return_the_same_number_of_place_order_results_as_requests() -> None:
+async def test_place_batch_order_should_return_the_same_number_of_place_order_results_as_requests() -> (
+    None
+):
     # Arrange
     client = AsyncClient(
         api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
@@ -116,18 +118,19 @@ async def test_place_batch_order_should_return_the_same_number_of_place_order_re
         side=OrderSide.SELL,
     )
 
-
     # Act
     await client.register_user_id()
     place_order_results = await client.place_batch_order([order, order, order, order])
 
     # Assert
-    assert len(place_order_results) == 4
+    assert len(list(place_order_results)) == 4
 
 
 @pytest.mark.usefixtures("mock_zex_server")
 @pytest.mark.asyncio
-async def test_all_place_order_requests_should_be_included_in_place_order_results() -> None:
+async def test_all_place_order_requests_should_be_included_in_place_order_results() -> (
+    None
+):
     # Arrange
     client = AsyncClient(
         api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
@@ -154,11 +157,14 @@ async def test_all_place_order_requests_should_be_included_in_place_order_result
         side=OrderSide.BUY,
     )
 
-
     # Act
     await client.register_user_id()
-    place_order_results = await client.place_batch_order([first_order, second_order, third_order])
-    place_order_requests_extracted_from_results = [result.place_order_request for result in place_order_results]
+    place_order_results = await client.place_batch_order(
+        [first_order, second_order, third_order]
+    )
+    place_order_requests_extracted_from_results = [
+        result.place_order_request for result in place_order_results
+    ]
 
     # Assert
     assert first_order in place_order_requests_extracted_from_results
@@ -168,7 +174,9 @@ async def test_all_place_order_requests_should_be_included_in_place_order_result
 
 @pytest.mark.usefixtures("mock_zex_server")
 @pytest.mark.asyncio
-async def test_place_order_requests_extracted_from_result_should_preserver_the_same_order() -> None:
+async def test_place_order_requests_extracted_from_result_should_preserver_the_same_order() -> (
+    None
+):
     # Arrange
     client = AsyncClient(
         api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
@@ -195,10 +203,11 @@ async def test_place_order_requests_extracted_from_result_should_preserver_the_s
         side=OrderSide.BUY,
     )
 
-
     # Act
     await client.register_user_id()
-    place_order_results = await client.place_batch_order([first_order, second_order, third_order])
+    place_order_results = await client.place_batch_order(
+        [first_order, second_order, third_order]
+    )
     place_order_results = list(place_order_results)
 
     # Assert
