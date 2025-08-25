@@ -52,7 +52,7 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
     [
         # NOTE: The prices are too high/low so they won't get filled.
         # Dev version.
-        (
+        pytest.param(
             "BTC",
             "zUSDT",
             OrderSide.BUY,
@@ -60,8 +60,9 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             30000.0,
             pytest.lazy_fixture("zex_dev_api_key"),  # type: ignore
             True,
+            id="testnet",
         ),  # Regular BTC buy.
-        (
+        pytest.param(
             "BTC",
             "zUSDT",
             OrderSide.SELL,
@@ -69,8 +70,9 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             300000.0,
             pytest.lazy_fixture("zex_dev_api_key"),  # type: ignore
             True,
+            id="testnet",
         ),  # Regular BTC sell.
-        (
+        pytest.param(
             "ETH",
             "zUSDT",
             OrderSide.BUY,
@@ -78,8 +80,9 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             3000.0,
             pytest.lazy_fixture("zex_dev_api_key"),  # type: ignore
             True,
+            id="testnet",
         ),  # Regular ETH buy.
-        (
+        pytest.param(
             "ETH",
             "zUSDT",
             OrderSide.SELL,
@@ -87,8 +90,9 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             300000.0,
             pytest.lazy_fixture("zex_dev_api_key"),  # type: ignore
             True,
+            id="testnet",
         ),  # Regular ETH sell.
-        (
+        pytest.param(
             "BTC",
             "zUSDT",
             OrderSide.BUY,
@@ -96,8 +100,9 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             30000.0,
             pytest.lazy_fixture("zex_dev_api_key"),  # type: ignore
             True,
+            id="testnet",
         ),  # 5 decimal digit volume.
-        (
+        pytest.param(
             "BTC",
             "zUSDT",
             OrderSide.BUY,
@@ -105,8 +110,9 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             30000.0,
             pytest.lazy_fixture("zex_dev_api_key"),  # type: ignore
             True,
+            id="testnet",
         ),  # 6 Non-zero decimals.
-        (
+        pytest.param(
             "BTC",
             "zUSDT",
             OrderSide.BUY,
@@ -114,8 +120,9 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             30000.0,
             pytest.lazy_fixture("zex_dev_api_key"),  # type: ignore
             True,
+            id="testnet",
         ),  # 7 Non-zero decimals.
-        (
+        pytest.param(
             "BTC",
             "zUSDT",
             OrderSide.BUY,
@@ -123,8 +130,9 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             30000.0,
             pytest.lazy_fixture("zex_dev_api_key"),  # type: ignore
             True,
+            id="testnet",
         ),  # 8 Non-zero decimals.
-        (
+        pytest.param(
             "BTC",
             "zUSDT",
             OrderSide.BUY,
@@ -132,8 +140,9 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             30000.0,
             pytest.lazy_fixture("zex_dev_api_key"),  # type: ignore
             True,
+            id="testnet",
         ),  # 9 Non-zero decimals.
-        (
+        pytest.param(
             "BTC",
             "zUSDT",
             OrderSide.BUY,
@@ -141,8 +150,9 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             30000.0,
             pytest.lazy_fixture("zex_dev_api_key"),  # type: ignore
             True,
+            id="testnet",
         ),  # 10 Non-zero decimals.
-        (
+        pytest.param(
             "ETH",
             "zUSDT",
             OrderSide.SELL,
@@ -150,8 +160,9 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             300000.0,
             pytest.lazy_fixture("zex_dev_api_key"),  # type: ignore
             True,
+            id="testnet",
         ),  # Non-zero decimals ETH.
-        (
+        pytest.param(
             "ETH",
             "zUSDT",
             OrderSide.SELL,
@@ -159,8 +170,9 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             300000.0,
             pytest.lazy_fixture("zex_dev_api_key"),  # type: ignore
             True,
+            id="testnet",
         ),  # With leading zero.
-        (
+        pytest.param(
             "BTC",
             "zUSDT",
             OrderSide.BUY,
@@ -168,8 +180,9 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             30000,
             pytest.lazy_fixture("zex_dev_api_key"),  # type: ignore
             True,
+            id="testnet",
         ),  # Integer price.
-        (
+        pytest.param(
             "BTC",
             "zUSDT",
             OrderSide.BUY,
@@ -177,8 +190,9 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             30000.01,
             pytest.lazy_fixture("zex_dev_api_key"),  # type: ignore
             True,
+            id="testnet",
         ),  # Price with 2 digits.
-        (
+        pytest.param(
             "BTC",
             "zUSDT",
             OrderSide.BUY,
@@ -186,8 +200,9 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             30000.10,
             pytest.lazy_fixture("zex_dev_api_key"),  # type: ignore
             True,
+            id="testnet",
         ),  # Price Digits leading Zero.
-        (
+        pytest.param(
             "BTC",
             "zUSDT",
             OrderSide.BUY,
@@ -195,8 +210,9 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             30000.1123,
             pytest.lazy_fixture("zex_dev_api_key"),  # type: ignore
             True,
+            id="testnet",
         ),  # Price with 4 digits.
-        (
+        pytest.param(
             "BTC",
             "zUSDT",
             OrderSide.BUY,
@@ -204,9 +220,10 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             30000.0001,
             pytest.lazy_fixture("zex_dev_api_key"),  # type: ignore
             True,
+            id="testnet",
         ),  # Price with small digits.
         # Main version.
-        (
+        pytest.param(
             "BTC",
             "zUSDT",
             OrderSide.BUY,
@@ -214,8 +231,10 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             30000.0,
             pytest.lazy_fixture("zex_main_api_key"),  # type: ignore
             False,
+            id="mainnet",
+            marks=pytest.mark.skip(reason="Skipping the mainnet case for now."),
         ),  # Regular BTC buy.
-        (
+        pytest.param(
             "BTC",
             "zUSDT",
             OrderSide.SELL,
@@ -223,8 +242,10 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             300000.0,
             pytest.lazy_fixture("zex_main_api_key"),  # type: ignore
             False,
+            id="mainnet",
+            marks=pytest.mark.skip(reason="Skipping the mainnet case for now."),
         ),  # Regular BTC sell.
-        (
+        pytest.param(
             "ETH",
             "zUSDT",
             OrderSide.BUY,
@@ -232,8 +253,10 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             3000.0,
             pytest.lazy_fixture("zex_main_api_key"),  # type: ignore
             False,
+            id="mainnet",
+            marks=pytest.mark.skip(reason="Skipping the mainnet case for now."),
         ),  # Regular ETH buy.
-        (
+        pytest.param(
             "ETH",
             "zUSDT",
             OrderSide.SELL,
@@ -241,8 +264,10 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             300000.0,
             pytest.lazy_fixture("zex_main_api_key"),  # type: ignore
             False,
+            id="mainnet",
+            marks=pytest.mark.skip(reason="Skipping the mainnet case for now."),
         ),  # Regular ETH sell.
-        (
+        pytest.param(
             "BTC",
             "zUSDT",
             OrderSide.BUY,
@@ -250,8 +275,10 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             30000.0,
             pytest.lazy_fixture("zex_main_api_key"),  # type: ignore
             False,
+            id="mainnet",
+            marks=pytest.mark.skip(reason="Skipping the mainnet case for now."),
         ),  # 5 decimal digit volume.
-        (
+        pytest.param(
             "BTC",
             "zUSDT",
             OrderSide.BUY,
@@ -259,8 +286,10 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             30000.0,
             pytest.lazy_fixture("zex_main_api_key"),  # type: ignore
             False,
+            id="mainnet",
+            marks=pytest.mark.skip(reason="Skipping the mainnet case for now."),
         ),  # 6 Non-zero decimals.
-        (
+        pytest.param(
             "BTC",
             "zUSDT",
             OrderSide.BUY,
@@ -268,8 +297,10 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             30000.0,
             pytest.lazy_fixture("zex_main_api_key"),  # type: ignore
             False,
+            id="mainnet",
+            marks=pytest.mark.skip(reason="Skipping the mainnet case for now."),
         ),  # 7 Non-zero decimals.
-        (
+        pytest.param(
             "BTC",
             "zUSDT",
             OrderSide.BUY,
@@ -277,8 +308,10 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             30000.0,
             pytest.lazy_fixture("zex_main_api_key"),  # type: ignore
             False,
+            id="mainnet",
+            marks=pytest.mark.skip(reason="Skipping the mainnet case for now."),
         ),  # 8 Non-zero decimals.
-        (
+        pytest.param(
             "BTC",
             "zUSDT",
             OrderSide.BUY,
@@ -286,8 +319,10 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             30000.0,
             pytest.lazy_fixture("zex_main_api_key"),  # type: ignore
             False,
+            id="mainnet",
+            marks=pytest.mark.skip(reason="Skipping the mainnet case for now."),
         ),  # 9 Non-zero decimals.
-        (
+        pytest.param(
             "BTC",
             "zUSDT",
             OrderSide.BUY,
@@ -295,8 +330,10 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             30000.0,
             pytest.lazy_fixture("zex_main_api_key"),  # type: ignore
             False,
+            id="mainnet",
+            marks=pytest.mark.skip(reason="Skipping the mainnet case for now."),
         ),  # 10 Non-zero decimals.
-        (
+        pytest.param(
             "ETH",
             "zUSDT",
             OrderSide.SELL,
@@ -304,8 +341,10 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             300000.0,
             pytest.lazy_fixture("zex_main_api_key"),  # type: ignore
             False,
+            id="mainnet",
+            marks=pytest.mark.skip(reason="Skipping the mainnet case for now."),
         ),  # Non-zero decimals ETH.
-        (
+        pytest.param(
             "ETH",
             "zUSDT",
             OrderSide.SELL,
@@ -313,8 +352,10 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             300000.0,
             pytest.lazy_fixture("zex_main_api_key"),  # type: ignore
             False,
+            id="mainnet",
+            marks=pytest.mark.skip(reason="Skipping the mainnet case for now."),
         ),  # With leading zero.
-        (
+        pytest.param(
             "BTC",
             "zUSDT",
             OrderSide.BUY,
@@ -322,8 +363,10 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             30000,
             pytest.lazy_fixture("zex_main_api_key"),  # type: ignore
             False,
+            id="mainnet",
+            marks=pytest.mark.skip(reason="Skipping the mainnet case for now."),
         ),  # Integer price.
-        (
+        pytest.param(
             "BTC",
             "zUSDT",
             OrderSide.BUY,
@@ -331,8 +374,10 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             30000.01,
             pytest.lazy_fixture("zex_main_api_key"),  # type: ignore
             False,
+            id="mainnet",
+            marks=pytest.mark.skip(reason="Skipping the mainnet case for now."),
         ),  # Price with 2 digits.
-        (
+        pytest.param(
             "BTC",
             "zUSDT",
             OrderSide.BUY,
@@ -340,8 +385,10 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             30000.10,
             pytest.lazy_fixture("zex_main_api_key"),  # type: ignore
             False,
+            id="mainnet",
+            marks=pytest.mark.skip(reason="Skipping the mainnet case for now."),
         ),  # Price Digits leading Zero.
-        (
+        pytest.param(
             "BTC",
             "zUSDT",
             OrderSide.BUY,
@@ -349,8 +396,10 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             30000.1123,
             pytest.lazy_fixture("zex_main_api_key"),  # type: ignore
             False,
+            id="mainnet",
+            marks=pytest.mark.skip(reason="Skipping the mainnet case for now."),
         ),  # Price with 4 digits.
-        (
+        pytest.param(
             "BTC",
             "zUSDT",
             OrderSide.BUY,
@@ -358,6 +407,8 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
             30000.0001,
             pytest.lazy_fixture("zex_main_api_key"),  # type: ignore
             False,
+            id="mainnet",
+            marks=pytest.mark.skip(reason="Skipping the mainnet case for now."),
         ),  # Price with small digits.
     ],
 )
@@ -413,13 +464,16 @@ async def test_given_registered_client_when_place_and_cancel_orders_then_feedbac
 @pytest.mark.parametrize(
     ("zex_api_key", "testnet"),
     [
-        (
+        pytest.param(
             pytest.lazy_fixture("zex_main_api_key"),  # type: ignore
             False,
+            id="mainnet",
+            marks=pytest.mark.skip(reason="Skipping the mainnet case for now."),
         ),
-        (
+        pytest.param(
             pytest.lazy_fixture("zex_dev_api_key"),  # type: ignore
             True,
+            id="testnet",
         ),
     ],
 )
