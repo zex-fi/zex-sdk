@@ -103,6 +103,30 @@ async def test_place_batch_order_returns_without_orders_and_not_query_the_nonce(
 
 @pytest.mark.usefixtures("mock_zex_server")
 @pytest.mark.asyncio
+async def test_place_batch_order_should_return_the_same_number_of_place_order_results_as_requests() -> None:
+    # Arrange
+    client = AsyncClient(
+        api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
+    )
+    order = PlaceOrderRequest(
+        base_token="BTC",
+        quote_token="USDT",
+        volume=0.1,
+        price=30000.0,
+        side=OrderSide.SELL,
+    )
+
+
+    # Act
+    await client.register_user_id()
+    place_order_results = await client.place_batch_order([order, order, order, order])  # Should silently succeed
+
+    # Assert
+    assert len(place_order_results) == 4
+
+
+@pytest.mark.usefixtures("mock_zex_server")
+@pytest.mark.asyncio
 async def test_cancel_batch_order_returns_without_payload() -> None:
     # Arrange
     client = AsyncClient(
