@@ -408,3 +408,95 @@ async def test_given_registered_client_when_place_and_cancel_orders_then_feedbac
     # Then: New order status should arrive
     assert first_status == "NEW"
     assert second_status == "CANCELED"
+
+
+@pytest.mark.parametrize(
+    ("zex_api_key", "testnet"),
+    [
+        (
+            pytest.lazy_fixture("zex_main_api_key"),  # type: ignore
+            False,
+        ),
+        (
+            pytest.lazy_fixture("zex_dev_api_key"),  # type: ignore
+            True,
+        ),
+    ],
+)
+@pytest.mark.asyncio
+async def test_given_a_batch_of_orders_when_place_and_cancel_then_feedbacks_should_be_received_via_websocket(
+    zex_api_key: str,
+    testnet: bool,
+) -> None:
+    # Given: A registered client
+    client = await AsyncClient.create(api_key=zex_api_key, testnet=testnet)
+    socket_manager = ZexSocketManager(client)
+    place_order_requests = [
+        PlaceOrderRequest(
+            base_token="BTC",
+            quote_token="zUSDT",
+            side=OrderSide.BUY,
+            volume=0.0001,
+            price=30000,
+        ),
+        PlaceOrderRequest(
+            base_token="BTC",
+            quote_token="zUSDT",
+            side=OrderSide.BUY,
+            volume=0.0001,
+            price=31000,
+        ),
+        PlaceOrderRequest(
+            base_token="BTC",
+            quote_token="zUSDT",
+            side=OrderSide.BUY,
+            volume=0.0001,
+            price=32000,
+        ),
+        PlaceOrderRequest(
+            base_token="BTC",
+            quote_token="zUSDT",
+            side=OrderSide.BUY,
+            volume=0.0001,
+            price=33000,
+        ),
+    ]
+
+    updated_order_status = []
+
+    async def extract_new_order_status(
+        order_update_message: ParsedWebSocketOrderMessage,
+    ) -> None:
+        updated_order_status.append(order_update_message.order_status_raw)
+
+    # When: Placing a batch with one order and canceling that same batch
+    execution_report_socket = await socket_manager.execution_report_socket(
+        callback=extract_new_order_status
+    )
+    async with execution_report_socket:
+        place_order_results = await client.place_batch_order(place_order_requests)
+        await asyncio.sleep(2)
+        await client.cancel_batch_order(
+            place_order_result.signed_order_transaction
+            for place_order_result in place_order_results
+        )
+        await asyncio.sleep(2)
+
+    first_status = updated_order_status[0]
+    second_status = updated_order_status[1]
+    third_status = updated_order_status[2]
+    fourth_status = updated_order_status[3]
+    fifth_status = updated_order_status[4]
+    sixth_status = updated_order_status[5]
+    seventh_status = updated_order_status[6]
+    eighth_status = updated_order_status[7]
+
+    # Then: New order status should arrive
+    assert first_status == "NEW"
+    assert second_status == "NEW"
+    assert third_status == "NEW"
+    assert fourth_status == "NEW"
+    assert fifth_status == "CANCELED"
+    assert sixth_status == "CANCELED"
+    assert seventh_status == "CANCELED"
+    assert eighth_status == "CANCELED"
