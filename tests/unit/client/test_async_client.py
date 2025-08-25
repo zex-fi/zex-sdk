@@ -119,10 +119,51 @@ async def test_place_batch_order_should_return_the_same_number_of_place_order_re
 
     # Act
     await client.register_user_id()
-    place_order_results = await client.place_batch_order([order, order, order, order])  # Should silently succeed
+    place_order_results = await client.place_batch_order([order, order, order, order])
 
     # Assert
     assert len(place_order_results) == 4
+
+
+@pytest.mark.usefixtures("mock_zex_server")
+@pytest.mark.asyncio
+async def test_all_place_order_requests_should_be_included_in_place_order_results() -> None:
+    # Arrange
+    client = AsyncClient(
+        api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
+    )
+    first_order = PlaceOrderRequest(
+        base_token="BTC",
+        quote_token="USDT",
+        volume=0.1,
+        price=30000.0,
+        side=OrderSide.SELL,
+    )
+    second_order = PlaceOrderRequest(
+        base_token="BTC",
+        quote_token="USDT",
+        volume=0.01,
+        price=30000.0,
+        side=OrderSide.SELL,
+    )
+    third_order = PlaceOrderRequest(
+        base_token="BTC",
+        quote_token="USDT",
+        volume=0.001,
+        price=30000.0,
+        side=OrderSide.BUY,
+    )
+
+
+    # Act
+    await client.register_user_id()
+    place_order_results = await client.place_batch_order([first_order, second_order, third_order])
+    place_order_requests_extracted_from_results = [result.place_order_request for result in place_order_results]
+
+    # Assert
+    assert first_order in place_order_requests_extracted_from_results
+    assert second_order in place_order_requests_extracted_from_results
+    assert third_order in place_order_requests_extracted_from_results
 
 
 @pytest.mark.usefixtures("mock_zex_server")
