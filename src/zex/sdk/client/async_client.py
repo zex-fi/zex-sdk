@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from enum import Enum
 import time
 from collections.abc import Iterable
 from decimal import Decimal
@@ -26,6 +27,11 @@ from zex.sdk.data_types import (
 )
 
 ServerResponseType = TypeVar("ServerResponseType")
+
+
+class SignatureType(Enum):
+    SECP256K1 = 1
+    ED25519 = 2
 
 
 class AsyncClient:
@@ -97,6 +103,7 @@ class AsyncClient:
 
         transaction_data = (
             pack(">B", self._version)
+            + pack(">B", SignatureType.SECP256K1.value)
             + pack(">B", self._register_command)
             + self.public_key
         )
@@ -173,7 +180,7 @@ class AsyncClient:
 
         return place_order_results
 
-    async def cancel_batch_order(self, signed_placed_orders: Iterable[bytes]) -> None:
+    async def cancel_batch_order(self, order_nonces: Iterable[int]) -> None:
         """
         Cancel a batch of orders in Zex exchange.
 
@@ -184,10 +191,8 @@ class AsyncClient:
             the exchange to be canceled.
         """
         payload = []
-        for signed_placed_order in signed_placed_orders:
-            signed_order = self._create_sigend_cancel_order_transaction(
-                signed_placed_order
-            )
+        for order_nonce in order_nonces:
+            signed_order = self._create_sigend_cancel_order_transaction(order_nonce)
             payload.append(signed_order.decode("latin-1"))
         if not payload:
             return
@@ -505,6 +510,7 @@ class AsyncClient:
 
         transaction_data = (
             pack(">B", self._version)
+            + pack(">B", SignatureType.SECP256K1.value)
             + pack(
                 ">B",
                 (
@@ -572,19 +578,20 @@ class AsyncClient:
             result += ".0"
         return result
 
-    def _create_sigend_cancel_order_transaction(self, signed_order: bytes) -> bytes:
+    def _create_sigend_cancel_order_transaction(self, order_nonce: int) -> bytes:
         transaction_data = (
             pack(">B", self._version)
+            + pack(">B", SignatureType.SECP256K1.value)
             + pack(">B", self._cancel_command)
-            + signed_order[1:-72]
             + pack(">Q", self.user_id)
+            + pack(">Q", order_nonce)
         )
 
         message = (
             f"v: {transaction_data[0]}\n"
             "name: cancel\n"
-            f"slice: {signed_order[1:-72].hex()}\n"
             f"user_id: {self.user_id}\n"
+            f"order_nonce: {order_nonce}\n"
         )
         message = "".join(
             ("\x19Ethereum Signed Message:\n", str(len(message)), message)
@@ -603,6 +610,7 @@ class AsyncClient:
     ) -> bytes:
         transaction_data = (
             pack(">B", self._version)
+            + pack(">B", SignatureType.SECP256K1.value)
             + pack(">B", self._withdraw_command)
             + pack(">B", len(withdraw_request.token_name))
             + withdraw_request.token_chain.encode()
@@ -625,7 +633,6 @@ class AsyncClient:
             f"t: {epoch}\n"
             f"nonce: {self.nonce}\n"
             f"user_id: {self.user_id}\n"
-            f"public: {self.public_key.hex()}\n"
         )
         message = "\x19Ethereum Signed Message:\n" + str(len(message)) + message
 
