@@ -14,7 +14,7 @@ from zex.sdk.data_types import (
 
 
 class SigningVisitorMain(SigningVisitor):
-    def create_register_signature(self) -> bytes:
+    def create_signed_register_transaction(self) -> bytes:
         transaction_data = (
             pack(">B", self._version)
             + pack(">B", self._register_command)

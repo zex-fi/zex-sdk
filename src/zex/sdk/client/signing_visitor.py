@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
-from coincurve import PrivateKey
 from enum import Enum
+
+from coincurve import PrivateKey
 
 from zex.sdk.data_types import CancelOrderRequest, PlaceOrderRequest, WithdrawRequest
 
@@ -11,7 +12,10 @@ class SignatureType(Enum):
 
 
 class SigningVisitor(ABC):
-    def __init__(self, api_key: str | None = None,) -> None:
+    def __init__(
+        self,
+        api_key: str | None = None,
+    ) -> None:
         private_key_bytes = bytes.fromhex(api_key) if api_key is not None else None
         self._private_key = PrivateKey(secret=private_key_bytes)
         self.public_key = self._private_key.public_key.format(compressed=True)
@@ -27,8 +31,11 @@ class SigningVisitor(ABC):
         self._deposit_command = ord("d")
         self._btc_deposit_command = ord("x")
 
+        self._price_digits = 2
+        self._volume_digits = 5
+
     @abstractmethod
-    def create_register_signature(self) -> None:
+    def create_signed_register_transaction(self) -> bytes:
         pass
 
     @abstractmethod
@@ -42,7 +49,12 @@ class SigningVisitor(ABC):
         pass
 
     @abstractmethod
-    def create_signed_withdraw_transaction(
-        self, request: WithdrawRequest
-    ) -> bytes:
+    def create_signed_withdraw_transaction(self, request: WithdrawRequest) -> bytes:
         pass
+
+    def _create_register_message(self) -> bytes:
+        message = "Welcome to ZEX."
+        message = "".join(
+            ("\x19Ethereum Signed Message:\n", str(len(message)), message)
+        )
+        return message.encode("ascii")
