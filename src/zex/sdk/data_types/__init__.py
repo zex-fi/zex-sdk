@@ -7,3 +7,4 @@ from .trade_info import TradeInfo as TradeInfo
 from .transfer import Transfer as Transfer
 from .withdraw import Withdraw as Withdraw
 from .withdraw_request import WithdrawRequest as WithdrawRequest
+from .cancel_order_request import CancelOrderRequest as CancelOrderRequest
