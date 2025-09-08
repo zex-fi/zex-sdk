@@ -41,7 +41,7 @@ async def test_given_registered_client_when_cancel_empty_signed_order_list_then_
     client = await AsyncClient.create(api_key=zex_dev_api_key)
 
     # When: Cancelling with no signed orders
-    await client.cancel_batch_order([])
+    await client.cancel_batch_order_main_version([])
 
     # Then (Empty)  # noqa: E800
     # No exception should be raised and the call completes
@@ -447,7 +447,7 @@ async def test_given_registered_client_when_place_and_cancel_orders_then_feedbac
     async with execution_report_socket:
         place_order_results = await client.place_batch_order([order])
         await asyncio.sleep(2)
-        await client.cancel_batch_order(
+        await client.cancel_batch_order_main_version(
             place_order_result.signed_order_transaction
             for place_order_result in place_order_results
         )
@@ -530,7 +530,7 @@ async def test_given_a_batch_of_orders_when_place_and_cancel_then_feedbacks_shou
     async with execution_report_socket:
         place_order_results = await client.place_batch_order(place_order_requests)
         await asyncio.sleep(2)
-        await client.cancel_batch_order(
+        await client.cancel_batch_order_main_version(
             place_order_result.signed_order_transaction
             for place_order_result in place_order_results
         )

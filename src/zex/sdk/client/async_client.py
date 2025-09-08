@@ -4,6 +4,7 @@ import asyncio
 import time
 from collections.abc import Iterable
 from decimal import Decimal
+from enum import Enum
 from struct import pack
 from typing import Any, TypeVar
 
@@ -26,6 +27,11 @@ from zex.sdk.data_types import (
 )
 
 ServerResponseType = TypeVar("ServerResponseType")
+
+
+class SignatureType(Enum):
+    SECP256K1 = 1
+    ED25519 = 2
 
 
 class AsyncClient:
@@ -97,6 +103,7 @@ class AsyncClient:
 
         transaction_data = (
             pack(">B", self._version)
+            + pack(">B", SignatureType.SECP256K1.value)
             + pack(">B", self._register_command)
             + self.public_key
         )
@@ -173,7 +180,9 @@ class AsyncClient:
 
         return place_order_results
 
-    async def cancel_batch_order(self, signed_placed_orders: Iterable[bytes]) -> None:
+    async def cancel_batch_order_main_version(
+        self, signed_placed_orders: Iterable[bytes]
+    ) -> None:
         """
         Cancel a batch of orders in Zex exchange.
 
@@ -185,8 +194,32 @@ class AsyncClient:
         """
         payload = []
         for signed_placed_order in signed_placed_orders:
-            signed_order = self._create_sigend_cancel_order_transaction(
+            signed_order = self._create_sigend_cancel_order_transaction_main_version(
                 signed_placed_order
+            )
+            payload.append(signed_order.decode("latin-1"))
+        if not payload:
+            return
+        async with httpx.AsyncClient() as client:
+            await client.post(
+                f"{self._api_endpoint}/v1/order",
+                json=payload,
+            )
+
+    async def cancel_batch_order_dev_version(self, order_nonces: Iterable[int]) -> None:
+        """
+        Cancel a batch of orders in Zex exchange.
+
+        .. note:
+            The client should be registered before calling this method.
+
+        :param signed_orders: The batch signed order transactions that were placed in \
+            the exchange to be canceled.
+        """
+        payload = []
+        for order_nonce in order_nonces:
+            signed_order = self._create_sigend_cancel_order_transaction_main_version(
+                order_nonce
             )
             payload.append(signed_order.decode("latin-1"))
         if not payload:
@@ -216,8 +249,8 @@ class AsyncClient:
             self.nonce = nonce_response.json()["nonce"]
             assert self.nonce is not None, "For typing."
 
-        signed_withdraw_transaction = self._create_signed_withdraw_transaction(
-            withdraw_request
+        signed_withdraw_transaction = (
+            self._create_signed_withdraw_transaction_main_version(withdraw_request)
         )
         payload = [signed_withdraw_transaction.decode("latin-1")]
         async with httpx.AsyncClient() as client:
@@ -505,6 +538,7 @@ class AsyncClient:
 
         transaction_data = (
             pack(">B", self._version)
+            + pack(">B", SignatureType.SECP256K1.value)
             + pack(
                 ">B",
                 (
@@ -572,7 +606,9 @@ class AsyncClient:
             result += ".0"
         return result
 
-    def _create_sigend_cancel_order_transaction(self, signed_order: bytes) -> bytes:
+    def _create_sigend_cancel_order_transaction_main_version(
+        self, signed_order: bytes
+    ) -> bytes:
         transaction_data = (
             pack(">B", self._version)
             + pack(">B", self._cancel_command)
@@ -598,7 +634,36 @@ class AsyncClient:
         transaction_data += signature
         return transaction_data
 
-    def _create_signed_withdraw_transaction(
+    def _create_sigend_cancel_order_transaction_dev_version(
+        self, order_nonce: int
+    ) -> bytes:
+        transaction_data = (
+            pack(">B", self._version)
+            + pack(">B", SignatureType.SECP256K1.value)
+            + pack(">B", self._cancel_command)
+            + pack(">Q", self.user_id)
+            + pack(">Q", order_nonce)
+        )
+
+        message = (
+            f"v: {transaction_data[0]}\n"
+            "name: cancel\n"
+            f"user_id: {self.user_id}\n"
+            f"order_nonce: {order_nonce}\n"
+        )
+        message = "".join(
+            ("\x19Ethereum Signed Message:\n", str(len(message)), message)
+        )
+
+        signature = self._private_key.sign_recoverable(
+            keccak(message.encode("ascii")), hasher=None
+        )
+        signature = signature[:64]  # Compact format
+
+        transaction_data += signature
+        return transaction_data
+
+    def _create_signed_withdraw_transaction_main_version(
         self, withdraw_request: WithdrawRequest
     ) -> bytes:
         transaction_data = (
@@ -626,6 +691,45 @@ class AsyncClient:
             f"nonce: {self.nonce}\n"
             f"user_id: {self.user_id}\n"
             f"public: {self.public_key.hex()}\n"
+        )
+        message = "\x19Ethereum Signed Message:\n" + str(len(message)) + message
+
+        signature = self._private_key.sign_recoverable(
+            keccak(message.encode("ascii")), hasher=None
+        )
+        signature = signature[:64]  # Compact format
+
+        transaction_data += signature
+        return transaction_data
+
+    def _create_signed_withdraw_transaction_dev_version(
+        self, withdraw_request: WithdrawRequest
+    ) -> bytes:
+        transaction_data = (
+            pack(">B", self._version)
+            + pack(">B", SignatureType.SECP256K1.value)
+            + pack(">B", self._withdraw_command)
+            + pack(">B", len(withdraw_request.token_name))
+            + withdraw_request.token_chain.encode()
+            + withdraw_request.token_name.encode()
+            + pack(">d", withdraw_request.amount)
+            + bytes.fromhex(withdraw_request.destination[2:])
+        )
+        epoch = int(time.time())
+        transaction_data += (
+            pack(">II", epoch, self.nonce) + pack(">Q", self.user_id) + self.public_key
+        )
+
+        message = (
+            "v: 1\n"
+            "name: withdraw\n"
+            f"token chain: {withdraw_request.token_chain}\n"
+            f"token name: {withdraw_request.token_name}\n"
+            f"amount: {withdraw_request.amount}\n"
+            f"to: {withdraw_request.destination}\n"
+            f"t: {epoch}\n"
+            f"nonce: {self.nonce}\n"
+            f"user_id: {self.user_id}\n"
         )
         message = "\x19Ethereum Signed Message:\n" + str(len(message)) + message
 
