@@ -21,7 +21,7 @@ class SigningVisitor(ABC):
         self.public_key = self._private_key.public_key.format(compressed=True)
 
         self._version = 1
-        self._signature_type = SignatureType
+        self._signature_type = SignatureType.SECP256K1
 
         self._register_command = ord("r")
         self._buy_command = ord("b")

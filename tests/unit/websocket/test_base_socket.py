@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from tests.utils import MockZexServer
-from zex.sdk.client import AsyncClient
+from zex.sdk.client import AsyncClient, SigningVisitorDev
 from zex.sdk.websocket import BaseSocket, SocketMessage
 
 
@@ -37,7 +37,9 @@ async def test_socket_should_receive_messages_sent_from_the_server(
 ) -> None:
     # Arrange
     client = AsyncClient(
-        api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
+        signing_visitor=SigningVisitorDev(
+            api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
+        )
     )
     await client.register_user_id()
 
@@ -60,7 +62,9 @@ async def test_socket_should_process_messages_sent_from_the_server(
 ) -> None:
     # Arrange
     client = AsyncClient(
-        api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
+        signing_visitor=SigningVisitorDev(
+            api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
+        )
     )
     await client.register_user_id()
 
@@ -85,7 +89,9 @@ async def test_socket_should_retry_on_websocket_error(
 ) -> None:
     # Arrange
     client = AsyncClient(
-        api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
+        signing_visitor=SigningVisitorDev(
+            api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
+        )
     )
     await client.register_user_id()
 
