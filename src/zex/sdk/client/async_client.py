@@ -1,23 +1,19 @@
 from __future__ import annotations
 
 import asyncio
-import time
 from collections.abc import Iterable
-from decimal import Decimal
 from enum import Enum
-from struct import pack
 from typing import Any, TypeVar
 
 import httpx
-import numpy as np
 from coincurve import PrivateKey
-from eth_hash.auto import keccak
 from pydantic import TypeAdapter
 
+from zex.sdk.client.signing_visitor import SigningVisitor
 from zex.sdk.data_types import (
     Asset,
+    CancelOrderRequest,
     Order,
-    OrderSide,
     PlaceOrderRequest,
     PlaceOrderResult,
     TradeInfo,
@@ -42,9 +38,11 @@ class AsyncClient:
 
     def __init__(
         self,
+        signing_visitor: SigningVisitor,
         api_key: str | None = None,
         testnet: bool = True,
     ) -> None:
+        self._signing_visitor = signing_visitor
         self._api_endpoint = (
             "https://api-dev.zex.finance" if testnet else "https://api.zex.finance"
         )
@@ -101,17 +99,7 @@ class AsyncClient:
         if self.user_id is not None:
             return
 
-        transaction_data = (
-            pack(">B", self._version)
-            + pack(">B", SignatureType.SECP256K1.value)
-            + pack(">B", self._register_command)
-            + self.public_key
-        )
-        signature = self._private_key.sign_recoverable(
-            keccak(self._create_register_message()), hasher=None
-        )
-        signature = signature[:64]  # Compact format.
-        transaction_data += signature
+        transaction_data = self._signing_visitor.create_signed_register_transaction()
 
         user_id = None
         async with httpx.AsyncClient() as client:
@@ -158,16 +146,20 @@ class AsyncClient:
         payload = []
         place_order_results = []
         for order in orders:
-            signed_order = self._create_signed_order_transaction(order)
+            signed_order_transaction = (
+                self._signing_visitor.create_signed_order_transaction(
+                    order, self.nonce, self.user_id
+                )
+            )
             place_order_results.append(
                 PlaceOrderResult(
                     place_order_request=order,
                     nonce=self.nonce,
-                    signed_order_transaction=signed_order,
+                    signed_order_transaction=signed_order_transaction,
                 )
             )
             self.nonce += 1
-            payload.append(signed_order.decode("latin-1"))
+            payload.append(signed_order_transaction.decode("latin-1"))
 
         if not payload:
             return []
@@ -181,7 +173,7 @@ class AsyncClient:
         return place_order_results
 
     async def cancel_batch_order_main_version(
-        self, signed_placed_orders: Iterable[bytes]
+        self, cancel_orders: Iterable[CancelOrderRequest]
     ) -> None:
         """
         Cancel a batch of orders in Zex exchange.
@@ -189,39 +181,19 @@ class AsyncClient:
         .. note:
             The client should be registered before calling this method.
 
-        :param signed_orders: The batch signed order transactions that were placed in \
-            the exchange to be canceled.
+        :param cancel_orders: The batch cancel order requests.
         """
+        if self.user_id is None:
+            raise RuntimeError("The Zex client is not registered.")
+
         payload = []
-        for signed_placed_order in signed_placed_orders:
-            signed_order = self._create_sigend_cancel_order_transaction_main_version(
-                signed_placed_order
+        for order in cancel_orders:
+            cancel_order_transaction = (
+                self._signing_visitor.create_sigend_cancel_order_transaction(
+                    order, self.user_id
+                )
             )
-            payload.append(signed_order.decode("latin-1"))
-        if not payload:
-            return
-        async with httpx.AsyncClient() as client:
-            await client.post(
-                f"{self._api_endpoint}/v1/order",
-                json=payload,
-            )
-
-    async def cancel_batch_order_dev_version(self, order_nonces: Iterable[int]) -> None:
-        """
-        Cancel a batch of orders in Zex exchange.
-
-        .. note:
-            The client should be registered before calling this method.
-
-        :param signed_orders: The batch signed order transactions that were placed in \
-            the exchange to be canceled.
-        """
-        payload = []
-        for order_nonce in order_nonces:
-            signed_order = self._create_sigend_cancel_order_transaction_main_version(
-                order_nonce
-            )
-            payload.append(signed_order.decode("latin-1"))
+            payload.append(cancel_order_transaction.decode("latin-1"))
         if not payload:
             return
         async with httpx.AsyncClient() as client:
@@ -250,7 +222,9 @@ class AsyncClient:
             assert self.nonce is not None, "For typing."
 
         signed_withdraw_transaction = (
-            self._create_signed_withdraw_transaction_main_version(withdraw_request)
+            self._signing_visitor.create_signed_withdraw_transaction(
+                withdraw_request, self.nonce, self.user_id
+            )
         )
         payload = [signed_withdraw_transaction.decode("latin-1")]
         async with httpx.AsyncClient() as client:
@@ -450,13 +424,6 @@ class AsyncClient:
             params={"id": self.user_id, "chain": chain},
         )
 
-    def _create_register_message(self) -> bytes:
-        message = "Welcome to ZEX."
-        message = "".join(
-            ("\x19Ethereum Signed Message:\n", str(len(message)), message)
-        )
-        return message.encode("ascii")
-
     async def _fetch_user_id_from_server(self, client: httpx.AsyncClient) -> int:
         while True:
             response = await client.get(
@@ -468,278 +435,6 @@ class AsyncClient:
                 if "id" in response_data:
                     return int(response_data["id"])
             await asyncio.sleep(0.1)
-
-    def _create_signed_order_transaction(self, order: PlaceOrderRequest) -> bytes:
-        if self.testnet:
-            return self._create_signed_order_transaction_dev_version(order)
-        return self._create_signed_order_transaction_main_version(order)
-
-    def _create_signed_order_transaction_main_version(
-        self, order: PlaceOrderRequest
-    ) -> bytes:
-        assert self.nonce is not None
-
-        pair = order.base_token + order.quote_token
-        transaction_data = (
-            pack(">B", self._version)
-            + pack(
-                ">B",
-                (
-                    self._buy_command
-                    if order.side == OrderSide.BUY
-                    else self._sell_command
-                ),
-            )
-            + pack(">B", len(order.base_token))
-            + pack(">B", len(order.quote_token))
-            + pair.encode()
-            + pack(">d", order.volume)
-            + pack(">d", order.price)
-        )
-        epoch = int(time.time())
-
-        transaction_data += pack(">II", epoch, self.nonce) + pack(">Q", self.user_id)
-
-        message = (
-            "v: 1\n"
-            f"name: {order.side.lower()}\n"
-            f"base token: {order.base_token}\n"
-            f"quote token: {order.quote_token}\n"
-            f"amount: {np.format_float_positional(order.volume, trim='0')}\n"
-            f"price: {np.format_float_positional(order.price, trim='0')}\n"
-            f"t: {epoch}\n"
-            f"nonce: {self.nonce}\n"
-            f"user_id: {self.user_id}\n"
-        )
-        message = "\x19Ethereum Signed Message:\n" + str(len(message)) + message
-
-        signature = self._private_key.sign_recoverable(
-            keccak(message.encode("ascii")), hasher=None
-        )
-        signature = signature[:64]  # Compact format
-
-        transaction_data += signature
-        return transaction_data
-
-    def _create_signed_order_transaction_dev_version(
-        self, order: PlaceOrderRequest
-    ) -> bytes:
-        assert self.nonce is not None
-
-        pair = order.base_token + order.quote_token
-
-        price = round(Decimal(order.price), self._price_digits)
-        volume = round(Decimal(order.volume), self._volume_digits)
-        volume_mantissa, volume_exponent = self._to_scientific(volume)
-        price_mantissa, price_exponent = self._to_scientific(price)
-
-        volume = volume_mantissa * 10 ** Decimal(volume_exponent)
-        price = price_mantissa * 10 ** Decimal(price_exponent)
-
-        transaction_data = (
-            pack(">B", self._version)
-            + pack(">B", SignatureType.SECP256K1.value)
-            + pack(
-                ">B",
-                (
-                    self._buy_command
-                    if order.side == OrderSide.BUY
-                    else self._sell_command
-                ),
-            )
-            + pack(">B", len(order.base_token))
-            + pack(">B", len(order.quote_token))
-            + pair.encode()
-            + pack(">Q b", volume_mantissa, volume_exponent)
-            + pack(">Q b", price_mantissa, price_exponent)
-        )
-        epoch = int(time.time())
-
-        transaction_data += pack(">II", epoch, self.nonce) + pack(">Q", self.user_id)
-
-        message = (
-            "v: 1\n"
-            f"name: {order.side.lower()}\n"
-            f"base token: {order.base_token}\n"
-            f"quote token: {order.quote_token}\n"
-            f"amount: {self._format_decimal(volume)}\n"
-            f"price: {self._format_decimal(price)}\n"
-            f"t: {epoch}\n"
-            f"nonce: {self.nonce}\n"
-            f"user_id: {self.user_id}\n"
-        )
-        message = "\x19Ethereum Signed Message:\n" + str(len(message)) + message
-
-        signature = self._private_key.sign_recoverable(
-            keccak(message.encode("ascii")), hasher=None
-        )
-        signature = signature[:64]  # Compact format
-
-        transaction_data += signature
-        return transaction_data
-
-    def _to_scientific(self, number: Decimal) -> tuple[int, int]:
-        """Convert a Decimal value to a mantissa and an exponent (base 10)."""
-
-        sign, digits, exponent = number.normalize().as_tuple()
-        if not isinstance(exponent, int):
-            raise TypeError(f"Cannot convert value to scientific form: {number}")
-
-        mantissa = 0
-        for index, digit in enumerate(reversed(digits)):
-            mantissa += digit * 10**index
-        mantissa *= -1 if sign != 0 else 1
-
-        if exponent < -128 or exponent > 127:
-            raise RuntimeError(f"Cannot convert value to scientific form: {number}")
-
-        return mantissa, exponent
-
-    def _format_decimal(self, decimal_number: Decimal) -> str:
-        """
-        Format the given decimal number, making sure scientific notation \
-        is *not* used and that there's always a traling .0 if there's no \
-        fractional part.
-        """
-        result = format(decimal_number, "f")
-        if "." not in result:
-            result += ".0"
-        return result
-
-    def _create_sigend_cancel_order_transaction_main_version(
-        self, signed_order: bytes
-    ) -> bytes:
-        transaction_data = (
-            pack(">B", self._version)
-            + pack(">B", self._cancel_command)
-            + signed_order[1:-72]
-            + pack(">Q", self.user_id)
-        )
-
-        message = (
-            f"v: {transaction_data[0]}\n"
-            "name: cancel\n"
-            f"slice: {signed_order[1:-72].hex()}\n"
-            f"user_id: {self.user_id}\n"
-        )
-        message = "".join(
-            ("\x19Ethereum Signed Message:\n", str(len(message)), message)
-        )
-
-        signature = self._private_key.sign_recoverable(
-            keccak(message.encode("ascii")), hasher=None
-        )
-        signature = signature[:64]  # Compact format
-
-        transaction_data += signature
-        return transaction_data
-
-    def _create_sigend_cancel_order_transaction_dev_version(
-        self, order_nonce: int
-    ) -> bytes:
-        transaction_data = (
-            pack(">B", self._version)
-            + pack(">B", SignatureType.SECP256K1.value)
-            + pack(">B", self._cancel_command)
-            + pack(">Q", self.user_id)
-            + pack(">Q", order_nonce)
-        )
-
-        message = (
-            f"v: {transaction_data[0]}\n"
-            "name: cancel\n"
-            f"user_id: {self.user_id}\n"
-            f"order_nonce: {order_nonce}\n"
-        )
-        message = "".join(
-            ("\x19Ethereum Signed Message:\n", str(len(message)), message)
-        )
-
-        signature = self._private_key.sign_recoverable(
-            keccak(message.encode("ascii")), hasher=None
-        )
-        signature = signature[:64]  # Compact format
-
-        transaction_data += signature
-        return transaction_data
-
-    def _create_signed_withdraw_transaction_main_version(
-        self, withdraw_request: WithdrawRequest
-    ) -> bytes:
-        transaction_data = (
-            pack(">B", self._version)
-            + pack(">B", self._withdraw_command)
-            + pack(">B", len(withdraw_request.token_name))
-            + withdraw_request.token_chain.encode()
-            + withdraw_request.token_name.encode()
-            + pack(">d", withdraw_request.amount)
-            + bytes.fromhex(withdraw_request.destination[2:])
-        )
-        epoch = int(time.time())
-        transaction_data += (
-            pack(">II", epoch, self.nonce) + pack(">Q", self.user_id) + self.public_key
-        )
-
-        message = (
-            "v: 1\n"
-            "name: withdraw\n"
-            f"token chain: {withdraw_request.token_chain}\n"
-            f"token name: {withdraw_request.token_name}\n"
-            f"amount: {withdraw_request.amount}\n"
-            f"to: {withdraw_request.destination}\n"
-            f"t: {epoch}\n"
-            f"nonce: {self.nonce}\n"
-            f"user_id: {self.user_id}\n"
-            f"public: {self.public_key.hex()}\n"
-        )
-        message = "\x19Ethereum Signed Message:\n" + str(len(message)) + message
-
-        signature = self._private_key.sign_recoverable(
-            keccak(message.encode("ascii")), hasher=None
-        )
-        signature = signature[:64]  # Compact format
-
-        transaction_data += signature
-        return transaction_data
-
-    def _create_signed_withdraw_transaction_dev_version(
-        self, withdraw_request: WithdrawRequest
-    ) -> bytes:
-        transaction_data = (
-            pack(">B", self._version)
-            + pack(">B", SignatureType.SECP256K1.value)
-            + pack(">B", self._withdraw_command)
-            + pack(">B", len(withdraw_request.token_name))
-            + withdraw_request.token_chain.encode()
-            + withdraw_request.token_name.encode()
-            + pack(">d", withdraw_request.amount)
-            + bytes.fromhex(withdraw_request.destination[2:])
-        )
-        epoch = int(time.time())
-        transaction_data += (
-            pack(">II", epoch, self.nonce) + pack(">Q", self.user_id) + self.public_key
-        )
-
-        message = (
-            "v: 1\n"
-            "name: withdraw\n"
-            f"token chain: {withdraw_request.token_chain}\n"
-            f"token name: {withdraw_request.token_name}\n"
-            f"amount: {withdraw_request.amount}\n"
-            f"to: {withdraw_request.destination}\n"
-            f"t: {epoch}\n"
-            f"nonce: {self.nonce}\n"
-            f"user_id: {self.user_id}\n"
-        )
-        message = "\x19Ethereum Signed Message:\n" + str(len(message)) + message
-
-        signature = self._private_key.sign_recoverable(
-            keccak(message.encode("ascii")), hasher=None
-        )
-        signature = signature[:64]  # Compact format
-
-        transaction_data += signature
-        return transaction_data
 
     async def _get_and_parse_response_from_server(
         self,
