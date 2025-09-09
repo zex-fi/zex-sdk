@@ -113,7 +113,7 @@ class SigningVisitorDev(SigningVisitor):
         return transaction_data
 
     def create_signed_withdraw_transaction(
-        self, request: WithdrawRequest, user_id: int, nonce: int
+        self, request: WithdrawRequest, nonce: int, user_id: int
     ) -> bytes:
         transaction_data = (
             pack(">B", self._version)

@@ -69,6 +69,7 @@ class AsyncClient:
         the transactions.
         :param testnet: Whether or not to submit transactions into Zex testnet.
         """
+        signing_visitor: SigningVisitor
         if testnet:
             signing_visitor = SigningVisitorDev(api_key=api_key)
         else:

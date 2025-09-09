@@ -30,8 +30,6 @@ class SigningVisitorMain(SigningVisitor):
     def create_signed_order_transaction(
         self, request: PlaceOrderRequest, nonce: int, user_id: int
     ) -> bytes:
-        assert self.nonce is not None
-
         pair = request.base_token + request.quote_token
         transaction_data = (
             pack(">B", self._version)
