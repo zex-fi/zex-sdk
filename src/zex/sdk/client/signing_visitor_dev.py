@@ -43,7 +43,6 @@ class SigningVisitorDev(SigningVisitor):
 
         transaction_data = (
             pack(">B", self._version)
-            + pack(">B", self._signature_type.value)
             + pack(
                 ">B",
                 (
@@ -52,6 +51,7 @@ class SigningVisitorDev(SigningVisitor):
                     else self._sell_command
                 ),
             )
+            + pack(">B", self._signature_type.value)
             + pack(">B", len(request.base_token))
             + pack(">B", len(request.quote_token))
             + pair.encode()
@@ -88,8 +88,8 @@ class SigningVisitorDev(SigningVisitor):
     ) -> bytes:
         transaction_data = (
             pack(">B", self._version)
-            + pack(">B", self._signature_type.value)
             + pack(">B", self._cancel_command)
+            + pack(">B", self._signature_type.value)
             + pack(">Q", user_id)
             + pack(">Q", request.order_nonce)
         )
