@@ -10,6 +10,8 @@ from coincurve import PrivateKey
 from pydantic import TypeAdapter
 
 from zex.sdk.client.signing_visitor import SigningVisitor
+from zex.sdk.client.signing_visitor_dev import SigningVisitorDev
+from zex.sdk.client.signing_visitor_main import SigningVisitorMain
 from zex.sdk.data_types import (
     Asset,
     CancelOrderRequest,
@@ -83,7 +85,11 @@ class AsyncClient:
         the transactions.
         :param testnet: Whether or not to submit transactions into Zex testnet.
         """
-        client = cls(api_key, testnet)
+        if testnet:
+            signing_visitor = SigningVisitorDev(api_key=api_key)
+        else:
+            signing_visitor = SigningVisitorMain(api_key=api_key)
+        client = cls(signing_visitor, api_key, testnet)
         await client.register_user_id()
         return client
 
