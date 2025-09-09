@@ -3,7 +3,7 @@ import asyncio
 import pytest
 
 from zex.sdk.client import AsyncClient
-from zex.sdk.data_types import OrderSide, PlaceOrderRequest
+from zex.sdk.data_types import CancelOrderRequest, OrderSide, PlaceOrderRequest
 from zex.sdk.websocket import ParsedWebSocketOrderMessage, ZexSocketManager
 
 
@@ -448,7 +448,10 @@ async def test_given_registered_client_when_place_and_cancel_orders_then_feedbac
         place_order_results = await client.place_batch_order([order])
         await asyncio.sleep(2)
         await client.cancel_batch_order_main_version(
-            place_order_result.signed_order_transaction
+            CancelOrderRequest(
+                signed_order=place_order_result.signed_order_transaction,
+                order_nonce=place_order_result.nonce,
+            )
             for place_order_result in place_order_results
         )
         await asyncio.sleep(2)
@@ -531,7 +534,10 @@ async def test_given_a_batch_of_orders_when_place_and_cancel_then_feedbacks_shou
         place_order_results = await client.place_batch_order(place_order_requests)
         await asyncio.sleep(2)
         await client.cancel_batch_order_main_version(
-            place_order_result.signed_order_transaction
+            CancelOrderRequest(
+                signed_order=place_order_result.signed_order_transaction,
+                order_nonce=place_order_result.nonce,
+            )
             for place_order_result in place_order_results
         )
         await asyncio.sleep(2)
