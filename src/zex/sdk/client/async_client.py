@@ -6,7 +6,6 @@ from enum import Enum
 from typing import Any, TypeVar
 
 import httpx
-from coincurve import PrivateKey
 from pydantic import TypeAdapter
 
 from zex.sdk.client.signing_visitor import SigningVisitor
@@ -41,7 +40,6 @@ class AsyncClient:
     def __init__(
         self,
         signing_visitor: SigningVisitor,
-        api_key: str | None = None,
         testnet: bool = True,
     ) -> None:
         self._signing_visitor = signing_visitor
@@ -51,23 +49,9 @@ class AsyncClient:
         self._version = 1
         self.testnet = testnet
 
-        private_key_bytes = bytes.fromhex(api_key) if api_key is not None else None
-        self._private_key = PrivateKey(secret=private_key_bytes)
-        self.public_key = self._private_key.public_key.format(compressed=True)
         self._register_timeout = 20.0
         self.nonce: int | None = None
         self.user_id: int | None = None
-
-        self._register_command = ord("r")
-        self._buy_command = ord("b")
-        self._sell_command = ord("s")
-        self._cancel_command = ord("c")
-        self._withdraw_command = ord("w")
-        self._deposit_command = ord("d")
-        self._btc_deposit_command = ord("x")
-
-        self._price_digits = 2
-        self._volume_digits = 5
 
     @classmethod
     async def create(
@@ -89,7 +73,7 @@ class AsyncClient:
             signing_visitor = SigningVisitorDev(api_key=api_key)
         else:
             signing_visitor = SigningVisitorMain(api_key=api_key)
-        client = cls(signing_visitor, api_key, testnet)
+        client = cls(signing_visitor, testnet)
         await client.register_user_id()
         return client
 
@@ -433,7 +417,7 @@ class AsyncClient:
     async def _fetch_user_id_from_server(self, client: httpx.AsyncClient) -> int:
         while True:
             response = await client.get(
-                f"{self._api_endpoint}/v1/user/id?public={self.public_key.hex()}",  # noqa: E501
+                f"{self._api_endpoint}/v1/user/id?public={self._signing_visitor.public_key.hex()}",  # noqa: E501
                 timeout=self._register_timeout,
             )
             if response.status_code == 200:
