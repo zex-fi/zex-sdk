@@ -163,7 +163,7 @@ class AsyncClient:
 
         return place_order_results
 
-    async def cancel_batch_order_main_version(
+    async def cancel_batch_order(
         self, cancel_orders: Iterable[CancelOrderRequest]
     ) -> None:
         """
