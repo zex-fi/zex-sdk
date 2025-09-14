@@ -5,7 +5,7 @@
 groups = ["default", "check", "lint", "test"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:441020f9eeec4bf8a8dd5310939cf9e68e5916fd5275aeb09317a8eeefa4dcf1"
+content_hash = "sha256:1624fa98497ff80d9affe45166356d838daf367dbb8d8e283ec7dcac8d01b113"
 
 [[metadata.targets]]
 requires_python = ">=3.11,<3.12"
@@ -176,7 +176,7 @@ name = "colorama"
 version = "0.4.6"
 requires_python = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,>=2.7"
 summary = "Cross-platform colored terminal text."
-groups = ["default", "lint", "test"]
+groups = ["lint", "test"]
 marker = "sys_platform == \"win32\" or platform_system == \"Windows\""
 files = [
     {file = "colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6"},
@@ -729,7 +729,7 @@ name = "iniconfig"
 version = "2.1.0"
 requires_python = ">=3.8"
 summary = "brain-dead simple config-ini parsing"
-groups = ["default", "test"]
+groups = ["test"]
 files = [
     {file = "iniconfig-2.1.0-py3-none-any.whl", hash = "sha256:9deba5723312380e77435581c6bf4935c94cbfab9b1ed33ef8d238ea168eb760"},
     {file = "iniconfig-2.1.0.tar.gz", hash = "sha256:3abbd2e30b36733fee78f9c7f7308f2d0050e88f0087fd25c2645f63c773e1c7"},
@@ -882,7 +882,7 @@ name = "packaging"
 version = "25.0"
 requires_python = ">=3.8"
 summary = "Core utilities for Python packages"
-groups = ["default", "lint", "test"]
+groups = ["lint", "test"]
 files = [
     {file = "packaging-25.0-py3-none-any.whl", hash = "sha256:29572ef2b1f17581046b3a2227d5c611fb25ec70ca1ba8554b24b0e69331a484"},
     {file = "packaging-25.0.tar.gz", hash = "sha256:d443872c98d677bf60f6a1f2f8c1cb748e8fe762d2bf9d3148b5599295b0fc4f"},
@@ -929,7 +929,7 @@ name = "pluggy"
 version = "1.6.0"
 requires_python = ">=3.9"
 summary = "plugin and hook calling mechanisms for python"
-groups = ["default", "test"]
+groups = ["test"]
 files = [
     {file = "pluggy-1.6.0-py3-none-any.whl", hash = "sha256:e920276dd6813095e9377c0bc5566d94c932c33b27a3e3945d8389c374dd4746"},
     {file = "pluggy-1.6.0.tar.gz", hash = "sha256:7dcc130b76258d33b90f61b658791dede3486c3e6bfb003ee5c9bfb396dd22f3"},
@@ -1078,7 +1078,7 @@ name = "pytest"
 version = "7.4.4"
 requires_python = ">=3.7"
 summary = "pytest: simple powerful testing with Python"
-groups = ["default", "test"]
+groups = ["test"]
 dependencies = [
     "colorama; sys_platform == \"win32\"",
     "exceptiongroup>=1.0.0rc8; python_version < \"3.11\"",
@@ -1172,7 +1172,7 @@ files = [
 name = "pytest-lazy-fixture"
 version = "0.6.3"
 summary = "It helps to use fixtures in pytest.mark.parametrize"
-groups = ["default"]
+groups = ["test"]
 dependencies = [
     "pytest>=3.2.5",
 ]
@@ -1404,7 +1404,7 @@ name = "types-pytest-lazy-fixture"
 version = "0.6.3.20240707"
 requires_python = ">=3.8"
 summary = "Typing stubs for pytest-lazy-fixture"
-groups = ["default"]
+groups = ["test"]
 files = [
     {file = "types-pytest-lazy-fixture-0.6.3.20240707.tar.gz", hash = "sha256:c6d93433977081bbb6b38bc521d4429113b23e7b14575db9e3948237e6691962"},
     {file = "types_pytest_lazy_fixture-0.6.3.20240707-py3-none-any.whl", hash = "sha256:b0493cb5ad3ff0fbd8ce0d83c07aa867d0770bba5c6c87a09eac0ad8ef86700d"},
