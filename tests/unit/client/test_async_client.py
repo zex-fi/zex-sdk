@@ -244,7 +244,7 @@ async def test_cancel_batch_order_returns_without_payload() -> None:
 
     # Act
     client.user_id = 1
-    await client.cancel_batch_order_main_version([])  # Should silently succeed
+    await client.cancel_batch_order([])  # Should silently succeed
 
     # Assert
     assert client.nonce is None
