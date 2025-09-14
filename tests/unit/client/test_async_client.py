@@ -1,6 +1,6 @@
 import pytest
 
-from zex.sdk.client import AsyncClient
+from zex.sdk.client import AsyncClient, SigningVisitorDev
 from zex.sdk.data_types import OrderSide, PlaceOrderRequest
 
 
@@ -9,7 +9,9 @@ from zex.sdk.data_types import OrderSide, PlaceOrderRequest
 async def test_register_user_id_assigns_user_id_when_not_registered() -> None:
     # Arrange
     client = AsyncClient(
-        api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
+        signing_visitor=SigningVisitorDev(
+            api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
+        )
     )
 
     # Act
@@ -24,7 +26,9 @@ async def test_register_user_id_assigns_user_id_when_not_registered() -> None:
 async def test_register_user_id_skips_registration_if_user_id_exists() -> None:
     # Arrange
     client = AsyncClient(
-        api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
+        signing_visitor=SigningVisitorDev(
+            api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
+        )
     )
     client.user_id = 1234
 
@@ -42,7 +46,9 @@ async def test_place_batch_order_should_increment_nonce_by_the_number_or_orders(
 ):
     # Arrange
     client = AsyncClient(
-        api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
+        signing_visitor=SigningVisitorDev(
+            api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
+        )
     )
     order = PlaceOrderRequest(
         base_token="BTC",
@@ -68,7 +74,9 @@ async def test_place_batch_order_should_increment_nonce_by_the_number_or_orders(
 async def test_place_batch_order_raises_if_not_registered() -> None:
     # Arrange
     client = AsyncClient(
-        api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
+        signing_visitor=SigningVisitorDev(
+            api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
+        )
     )
     order = PlaceOrderRequest(
         base_token="BTC",
@@ -90,7 +98,9 @@ async def test_place_batch_order_returns_without_orders_and_not_query_the_nonce(
 ):
     # Arrange
     client = AsyncClient(
-        api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
+        signing_visitor=SigningVisitorDev(
+            api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
+        )
     )
 
     # Act
@@ -108,7 +118,9 @@ async def test_place_batch_order_should_return_the_same_number_of_place_order_re
 ):
     # Arrange
     client = AsyncClient(
-        api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
+        signing_visitor=SigningVisitorDev(
+            api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
+        )
     )
     order = PlaceOrderRequest(
         base_token="BTC",
@@ -133,7 +145,9 @@ async def test_all_place_order_requests_should_be_included_in_place_order_result
 ):
     # Arrange
     client = AsyncClient(
-        api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
+        signing_visitor=SigningVisitorDev(
+            api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
+        )
     )
     first_order = PlaceOrderRequest(
         base_token="BTC",
@@ -179,7 +193,9 @@ async def test_place_order_requests_extracted_from_result_should_preserver_the_s
 ):
     # Arrange
     client = AsyncClient(
-        api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
+        signing_visitor=SigningVisitorDev(
+            api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
+        )
     )
     first_order = PlaceOrderRequest(
         base_token="BTC",
@@ -221,12 +237,14 @@ async def test_place_order_requests_extracted_from_result_should_preserver_the_s
 async def test_cancel_batch_order_returns_without_payload() -> None:
     # Arrange
     client = AsyncClient(
-        api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
+        signing_visitor=SigningVisitorDev(
+            api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
+        )
     )
 
     # Act
     client.user_id = 1
-    await client.cancel_batch_order([])  # Should silently succeed
+    await client.cancel_batch_order_main_version([])  # Should silently succeed
 
     # Assert
     assert client.nonce is None
@@ -237,7 +255,9 @@ async def test_cancel_batch_order_returns_without_payload() -> None:
 async def test_create_classmethod_returns_registered_client() -> None:
     # Arrange
     client = AsyncClient(
-        api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
+        signing_visitor=SigningVisitorDev(
+            api_key="e68a96346678e8131622d453ed80b6e1a5ccf19f05727f8a4d31281ae6e82458"
+        )
     )
 
     # Act
