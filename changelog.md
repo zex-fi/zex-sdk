@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.2] - 2025-09-15
 
-### Changed
+### Fixed
 
 - The fields of `Order` data type to match the server response. It now includes: `amount, base_token, id, name, nonce, price, quote_token, t`.
 
