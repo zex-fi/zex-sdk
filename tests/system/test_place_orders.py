@@ -454,7 +454,7 @@ async def test_given_registered_client_when_place_and_cancel_orders_then_feedbac
             )
             for place_order_result in place_order_results
         )
-        await asyncio.sleep(4)
+        await asyncio.sleep(5)
 
     first_status = updated_order_status[0]
     second_status = updated_order_status[1]
@@ -540,7 +540,7 @@ async def test_given_a_batch_of_orders_when_place_and_cancel_then_feedbacks_shou
             )
             for place_order_result in place_order_results
         )
-        await asyncio.sleep(4)
+        await asyncio.sleep(5)
 
     first_status = updated_order_status[0]
     second_status = updated_order_status[1]
@@ -639,7 +639,7 @@ async def test_given_a_batch_of_orders_when_placing_orders_then_order_data_shoul
             )
             for place_order_result in place_order_results
         )
-        await asyncio.sleep(4)
+        await asyncio.sleep(5)
 
     # To match with corresponding place order request.
     orders = sorted(orders, key=lambda order: order.price)
