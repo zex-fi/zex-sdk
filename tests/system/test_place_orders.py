@@ -446,7 +446,7 @@ async def test_given_registered_client_when_place_and_cancel_orders_then_feedbac
     )
     async with execution_report_socket:
         place_order_results = await client.place_batch_order([order])
-        await asyncio.sleep(2)
+        await asyncio.sleep(3)
         await client.cancel_batch_order(
             CancelOrderRequest(
                 signed_order=place_order_result.signed_order_transaction,
@@ -454,7 +454,7 @@ async def test_given_registered_client_when_place_and_cancel_orders_then_feedbac
             )
             for place_order_result in place_order_results
         )
-        await asyncio.sleep(4)
+        await asyncio.sleep(5)
 
     first_status = updated_order_status[0]
     second_status = updated_order_status[1]
@@ -532,7 +532,7 @@ async def test_given_a_batch_of_orders_when_place_and_cancel_then_feedbacks_shou
     )
     async with execution_report_socket:
         place_order_results = await client.place_batch_order(place_order_requests)
-        await asyncio.sleep(2)
+        await asyncio.sleep(3)
         await client.cancel_batch_order(
             CancelOrderRequest(
                 signed_order=place_order_result.signed_order_transaction,
@@ -540,7 +540,7 @@ async def test_given_a_batch_of_orders_when_place_and_cancel_then_feedbacks_shou
             )
             for place_order_result in place_order_results
         )
-        await asyncio.sleep(4)
+        await asyncio.sleep(5)
 
     first_status = updated_order_status[0]
     second_status = updated_order_status[1]
@@ -560,3 +560,112 @@ async def test_given_a_batch_of_orders_when_place_and_cancel_then_feedbacks_shou
     assert sixth_status == "CANCELED"
     assert seventh_status == "CANCELED"
     assert eighth_status == "CANCELED"
+
+
+@pytest.mark.parametrize(
+    ("zex_api_key", "testnet"),
+    [
+        pytest.param(
+            pytest.lazy_fixture("zex_main_api_key"),  # type: ignore
+            False,
+            id="mainnet",
+            marks=pytest.mark.skip(reason="Skipping the mainnet case for now."),
+        ),
+        pytest.param(
+            pytest.lazy_fixture("zex_dev_api_key"),  # type: ignore
+            True,
+            id="testnet",
+        ),
+    ],
+)
+@pytest.mark.asyncio
+async def test_given_a_batch_of_orders_when_placing_orders_then_order_data_should_be_retrieved_from_server(
+    zex_api_key: str,
+    testnet: bool,
+) -> None:
+    # Given: A registered client
+    client = await AsyncClient.create(api_key=zex_api_key, testnet=testnet)
+    socket_manager = ZexSocketManager(client)
+    place_order_requests = [
+        PlaceOrderRequest(
+            base_token="BTC",
+            quote_token="zUSDT",
+            side=OrderSide.BUY,
+            volume=0.0001,
+            price=30000,
+        ),
+        PlaceOrderRequest(
+            base_token="BTC",
+            quote_token="zUSDT",
+            side=OrderSide.BUY,
+            volume=0.0001,
+            price=31000,
+        ),
+        PlaceOrderRequest(
+            base_token="BTC",
+            quote_token="zUSDT",
+            side=OrderSide.BUY,
+            volume=0.0001,
+            price=32000,
+        ),
+        PlaceOrderRequest(
+            base_token="BTC",
+            quote_token="zUSDT",
+            side=OrderSide.BUY,
+            volume=0.0001,
+            price=33000,
+        ),
+    ]
+
+    updated_order_status = []
+
+    async def extract_new_order_status(
+        order_update_message: ParsedWebSocketOrderMessage,
+    ) -> None:
+        updated_order_status.append(order_update_message.order_status_raw)
+
+    # When: Placing a batch with one order and canceling that same batch
+    execution_report_socket = await socket_manager.execution_report_socket(
+        callback=extract_new_order_status
+    )
+    async with execution_report_socket:
+        place_order_results = await client.place_batch_order(place_order_requests)
+        await asyncio.sleep(3)
+        orders = await client.get_user_orders()
+        await client.cancel_batch_order(
+            CancelOrderRequest(
+                signed_order=place_order_result.signed_order_transaction,
+                order_nonce=place_order_result.nonce,
+            )
+            for place_order_result in place_order_results
+        )
+        await asyncio.sleep(5)
+
+    # To match with corresponding place order request.
+    orders = sorted(orders, key=lambda order: order.price)
+
+    # Then: New order status should arrive
+    assert len(orders) == len(place_order_requests)
+    assert orders[0].amount == place_order_requests[0].volume
+    assert orders[0].base_token == place_order_requests[0].base_token
+    assert orders[0].quote_token == place_order_requests[0].quote_token
+    assert orders[0].name == place_order_requests[0].side.value.lower()
+    assert orders[0].price == place_order_requests[0].price
+
+    assert orders[1].amount == place_order_requests[1].volume
+    assert orders[1].base_token == place_order_requests[1].base_token
+    assert orders[1].quote_token == place_order_requests[1].quote_token
+    assert orders[1].name == place_order_requests[1].side.value.lower()
+    assert orders[1].price == place_order_requests[1].price
+
+    assert orders[2].amount == place_order_requests[2].volume
+    assert orders[2].base_token == place_order_requests[2].base_token
+    assert orders[2].quote_token == place_order_requests[2].quote_token
+    assert orders[2].name == place_order_requests[2].side.value.lower()
+    assert orders[2].price == place_order_requests[2].price
+
+    assert orders[3].amount == place_order_requests[3].volume
+    assert orders[3].base_token == place_order_requests[3].base_token
+    assert orders[3].quote_token == place_order_requests[3].quote_token
+    assert orders[3].name == place_order_requests[3].side.value.lower()
+    assert orders[3].price == place_order_requests[3].price
