@@ -640,7 +640,7 @@ async def test_given_a_batch_of_orders_when_placing_orders_then_order_data_shoul
             for place_order_result in place_order_results
         )
         await asyncio.sleep(4)
-
+ 
     # To match with corresponding place order request.
     orders = sorted(orders, key=lambda order: order.price)
 
