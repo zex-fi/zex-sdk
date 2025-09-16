@@ -446,7 +446,7 @@ async def test_given_registered_client_when_place_and_cancel_orders_then_feedbac
     )
     async with execution_report_socket:
         place_order_results = await client.place_batch_order([order])
-        await asyncio.sleep(2)
+        await asyncio.sleep(3)
         await client.cancel_batch_order(
             CancelOrderRequest(
                 signed_order=place_order_result.signed_order_transaction,
@@ -532,7 +532,7 @@ async def test_given_a_batch_of_orders_when_place_and_cancel_then_feedbacks_shou
     )
     async with execution_report_socket:
         place_order_results = await client.place_batch_order(place_order_requests)
-        await asyncio.sleep(2)
+        await asyncio.sleep(3)
         await client.cancel_batch_order(
             CancelOrderRequest(
                 signed_order=place_order_result.signed_order_transaction,
@@ -630,7 +630,7 @@ async def test_given_a_batch_of_orders_when_placing_orders_then_order_data_shoul
     )
     async with execution_report_socket:
         place_order_results = await client.place_batch_order(place_order_requests)
-        await asyncio.sleep(2)
+        await asyncio.sleep(3)
         orders = await client.get_user_orders()
         await client.cancel_batch_order(
             CancelOrderRequest(
