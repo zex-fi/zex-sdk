@@ -35,23 +35,23 @@ class SigningVisitor(ABC):
         self._volume_digits = 5
 
     @abstractmethod
-    def create_signed_register_transaction(self) -> bytes:
+    def create_register_transaction(self) -> bytes:
         pass
 
     @abstractmethod
-    def create_signed_order_transaction(
+    def create_place_order_transaction(
         self, request: PlaceOrderRequest, nonce: int, user_id: int
     ) -> bytes:
         pass
 
     @abstractmethod
-    def create_sigend_cancel_order_transaction(
+    def create_cancel_order_transaction(
         self, request: CancelOrderRequest, user_id: int
     ) -> bytes:
         pass
 
     @abstractmethod
-    def create_signed_withdraw_transaction(
+    def create_withdraw_transaction(
         self, request: WithdrawRequest, nonce: int, user_id: int
     ) -> bytes:
         pass

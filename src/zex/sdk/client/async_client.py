@@ -90,7 +90,7 @@ class AsyncClient:
         if self.user_id is not None:
             return
 
-        transaction_data = self._signing_visitor.create_signed_register_transaction()
+        transaction_data = self._signing_visitor.create_register_transaction()
 
         user_id = None
         async with httpx.AsyncClient() as client:
@@ -138,7 +138,7 @@ class AsyncClient:
         place_order_results = []
         for order in orders:
             signed_order_transaction = (
-                self._signing_visitor.create_signed_order_transaction(
+                self._signing_visitor.create_place_order_transaction(
                     order, self.nonce, self.user_id
                 )
             )
@@ -180,7 +180,7 @@ class AsyncClient:
         payload = []
         for order in cancel_orders:
             cancel_order_transaction = (
-                self._signing_visitor.create_sigend_cancel_order_transaction(
+                self._signing_visitor.create_cancel_order_transaction(
                     order, self.user_id
                 )
             )
@@ -212,10 +212,8 @@ class AsyncClient:
             self.nonce = nonce_response.json()["nonce"]
             assert self.nonce is not None, "For typing."
 
-        signed_withdraw_transaction = (
-            self._signing_visitor.create_signed_withdraw_transaction(
-                withdraw_request, self.nonce, self.user_id
-            )
+        signed_withdraw_transaction = self._signing_visitor.create_withdraw_transaction(
+            withdraw_request, self.nonce, self.user_id
         )
         payload = [signed_withdraw_transaction.decode("latin-1")]
         async with httpx.AsyncClient() as client:
