@@ -14,11 +14,11 @@ from zex.sdk.data_types import (
 
 
 class SigningVisitorDev(SigningVisitor):
-    def create_signed_register_transaction(self) -> bytes:
+    def create_register_transaction(self) -> bytes:
         transaction_data = (
             pack(">B", self._version)
-            + pack(">B", self._signature_type.value)
             + pack(">B", self._register_command)
+            + pack(">B", self._signature_type.value)
             + self.public_key
         )
         signature = self._private_key.sign_recoverable(
@@ -28,7 +28,7 @@ class SigningVisitorDev(SigningVisitor):
         transaction_data += signature
         return transaction_data
 
-    def create_signed_order_transaction(
+    def create_place_order_transaction(
         self, request: PlaceOrderRequest, nonce: int, user_id: int
     ) -> bytes:
         pair = request.base_token + request.quote_token
@@ -83,7 +83,7 @@ class SigningVisitorDev(SigningVisitor):
         transaction_data += signature
         return transaction_data
 
-    def create_sigend_cancel_order_transaction(
+    def create_cancel_order_transaction(
         self, request: CancelOrderRequest, user_id: int
     ) -> bytes:
         transaction_data = (
@@ -112,7 +112,7 @@ class SigningVisitorDev(SigningVisitor):
         transaction_data += signature
         return transaction_data
 
-    def create_signed_withdraw_transaction(
+    def create_withdraw_transaction(
         self, request: WithdrawRequest, nonce: int, user_id: int
     ) -> bytes:
         transaction_data = (
