@@ -40,6 +40,7 @@ class SigningVisitorDev(SigningVisitor):
 
         volume = volume_mantissa * 10 ** Decimal(volume_exponent)
         price = price_mantissa * 10 ** Decimal(price_exponent)
+        epoch = int(time.time())
 
         transaction_data = (
             pack(">B", self._version)
@@ -57,10 +58,9 @@ class SigningVisitorDev(SigningVisitor):
             + pair.encode()
             + pack(">Q b", volume_mantissa, volume_exponent)
             + pack(">Q b", price_mantissa, price_exponent)
+            + pack(">IQ", epoch, nonce)
+            + pack(">Q", user_id)
         )
-        epoch = int(time.time())
-
-        transaction_data += pack(">II", epoch, nonce) + pack(">Q", user_id)
 
         message = (
             "v: 1\n"
