@@ -23,7 +23,7 @@ class BaseSocket:
         self._client = client
         self._callback = callback
         self._websocket_endpoint = (
-            "wss://api-dev.zex.finance"
+            "wss://api-beta.zex.finance"
             if self._client.testnet
             else "wss://api.zex.finance"
         )
