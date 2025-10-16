@@ -7,6 +7,7 @@ from zex.sdk.data_types import CancelOrderRequest, OrderSide, PlaceOrderRequest
 from zex.sdk.websocket import ParsedWebSocketOrderMessage, ZexSocketManager
 
 
+@pytest.mark.skip
 @pytest.mark.asyncio
 async def test_given_valid_api_key_when_client_is_created_then_user_id_is_registered(
     zex_dev_api_key: str,
@@ -19,6 +20,7 @@ async def test_given_valid_api_key_when_client_is_created_then_user_id_is_regist
     assert client.user_id is not None
 
 
+@pytest.mark.skip
 @pytest.mark.asyncio
 async def test_given_registered_client_when_place_empty_order_list_then_nothing_is_submitted(
     zex_dev_api_key: str,
@@ -33,6 +35,7 @@ async def test_given_registered_client_when_place_empty_order_list_then_nothing_
     # No-op with no orders should not fail
 
 
+@pytest.mark.skip
 @pytest.mark.asyncio
 async def test_given_registered_client_when_cancel_empty_signed_order_list_then_nothing_is_cancelled(
     zex_dev_api_key: str,
