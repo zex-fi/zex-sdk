@@ -15,4 +15,6 @@ class PlaceOrderRequest(BaseModel):
     )
     side: OrderSide = Field(..., description="Side of the order: 'buy' or 'sell'.")
     volume: float = Field(..., description="Amount of base token to be bought or sold.")
+    volume_precision: int = Field(..., description="The precision of the given volume.")
     price: float = Field(..., description="Limit price per unit of the base token.")
+    price_precision: int = Field(..., description="The precision of the given price.")

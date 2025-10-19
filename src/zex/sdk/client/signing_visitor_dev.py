@@ -33,8 +33,8 @@ class SigningVisitorDev(SigningVisitor):
     ) -> bytes:
         pair = request.base_token + request.quote_token
 
-        price = round(Decimal(request.price), self._price_digits)
-        volume = round(Decimal(request.volume), self._volume_digits)
+        price = round(Decimal(request.price), request.price_precision)
+        volume = round(Decimal(request.volume), request.volume_precision)
         volume_mantissa, volume_exponent = self._to_scientific(volume)
         price_mantissa, price_exponent = self._to_scientific(price)
 
