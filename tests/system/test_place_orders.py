@@ -451,6 +451,8 @@ async def test_given_registered_client_when_place_and_cancel_orders_then_feedbac
         side=side,
         volume=volume,
         price=price,
+        volume_precision=5,
+        price_precision=2,
     )
 
     updated_order_status = []
@@ -516,6 +518,8 @@ async def test_given_a_batch_of_orders_when_place_and_cancel_then_feedbacks_shou
             side=OrderSide.BUY,
             volume=0.0001,
             price=30000,
+            volume_precision=5,
+            price_precision=2,
         ),
         PlaceOrderRequest(
             base_token="BTC",
@@ -523,6 +527,8 @@ async def test_given_a_batch_of_orders_when_place_and_cancel_then_feedbacks_shou
             side=OrderSide.BUY,
             volume=0.0001,
             price=31000,
+            volume_precision=5,
+            price_precision=2,
         ),
         PlaceOrderRequest(
             base_token="BTC",
@@ -530,6 +536,8 @@ async def test_given_a_batch_of_orders_when_place_and_cancel_then_feedbacks_shou
             side=OrderSide.BUY,
             volume=0.0001,
             price=32000,
+            volume_precision=5,
+            price_precision=2,
         ),
         PlaceOrderRequest(
             base_token="BTC",
@@ -537,6 +545,8 @@ async def test_given_a_batch_of_orders_when_place_and_cancel_then_feedbacks_shou
             side=OrderSide.BUY,
             volume=0.0001,
             price=33000,
+            volume_precision=5,
+            price_precision=2,
         ),
     ]
 
@@ -615,6 +625,8 @@ async def test_given_a_batch_of_orders_when_placing_orders_then_order_data_shoul
             side=OrderSide.BUY,
             volume=0.0001,
             price=30000,
+            volume_precision=5,
+            price_precision=2,
         ),
         PlaceOrderRequest(
             base_token="BTC",
@@ -622,6 +634,8 @@ async def test_given_a_batch_of_orders_when_placing_orders_then_order_data_shoul
             side=OrderSide.BUY,
             volume=0.0001,
             price=31000,
+            volume_precision=5,
+            price_precision=2,
         ),
         PlaceOrderRequest(
             base_token="BTC",
@@ -629,6 +643,8 @@ async def test_given_a_batch_of_orders_when_placing_orders_then_order_data_shoul
             side=OrderSide.BUY,
             volume=0.0001,
             price=32000,
+            volume_precision=5,
+            price_precision=2,
         ),
         PlaceOrderRequest(
             base_token="BTC",
@@ -636,6 +652,8 @@ async def test_given_a_batch_of_orders_when_placing_orders_then_order_data_shoul
             side=OrderSide.BUY,
             volume=0.0001,
             price=33000,
+            volume_precision=5,
+            price_precision=2,
         ),
     ]
 

@@ -31,9 +31,6 @@ class SigningVisitor(ABC):
         self._deposit_command = ord("d")
         self._btc_deposit_command = ord("x")
 
-        self._price_digits = 2
-        self._volume_digits = 5
-
     @abstractmethod
     def create_register_transaction(self) -> bytes:
         pass

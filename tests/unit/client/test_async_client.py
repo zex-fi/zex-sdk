@@ -56,6 +56,8 @@ async def test_place_batch_order_should_increment_nonce_by_the_number_or_orders(
         volume=0.1,
         price=30000.0,
         side=OrderSide.BUY,
+        volume_precision=5,
+        price_precision=2,
     )
 
     # Act
@@ -84,6 +86,8 @@ async def test_place_batch_order_raises_if_not_registered() -> None:
         volume=0.1,
         price=30000.0,
         side=OrderSide.SELL,
+        volume_precision=5,
+        price_precision=2,
     )
 
     # Act, Assert
@@ -128,6 +132,8 @@ async def test_place_batch_order_should_return_the_same_number_of_place_order_re
         volume=0.1,
         price=30000.0,
         side=OrderSide.SELL,
+        volume_precision=5,
+        price_precision=2,
     )
 
     # Act
@@ -155,6 +161,8 @@ async def test_all_place_order_requests_should_be_included_in_place_order_result
         volume=0.1,
         price=30000.0,
         side=OrderSide.SELL,
+        volume_precision=5,
+        price_precision=2,
     )
     second_order = PlaceOrderRequest(
         base_token="BTC",
@@ -162,6 +170,8 @@ async def test_all_place_order_requests_should_be_included_in_place_order_result
         volume=0.01,
         price=30000.0,
         side=OrderSide.SELL,
+        volume_precision=5,
+        price_precision=2,
     )
     third_order = PlaceOrderRequest(
         base_token="BTC",
@@ -169,6 +179,8 @@ async def test_all_place_order_requests_should_be_included_in_place_order_result
         volume=0.001,
         price=30000.0,
         side=OrderSide.BUY,
+        volume_precision=5,
+        price_precision=2,
     )
 
     # Act
@@ -203,6 +215,8 @@ async def test_place_order_requests_extracted_from_result_should_preserver_the_s
         volume=0.1,
         price=30000.0,
         side=OrderSide.SELL,
+        volume_precision=5,
+        price_precision=2,
     )
     second_order = PlaceOrderRequest(
         base_token="BTC",
@@ -210,6 +224,8 @@ async def test_place_order_requests_extracted_from_result_should_preserver_the_s
         volume=0.01,
         price=30000.0,
         side=OrderSide.SELL,
+        volume_precision=5,
+        price_precision=2,
     )
     third_order = PlaceOrderRequest(
         base_token="BTC",
@@ -217,6 +233,8 @@ async def test_place_order_requests_extracted_from_result_should_preserver_the_s
         volume=0.001,
         price=30000.0,
         side=OrderSide.BUY,
+        volume_precision=5,
+        price_precision=2,
     )
 
     # Act
